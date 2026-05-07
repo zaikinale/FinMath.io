@@ -5,8 +5,7 @@ import RegisterPage from './pages/auth/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import ErrorPage from './pages/ErrorPage'
-
-
+import { PeriodTransactionsPage } from './pages/PeriodTransactionsPage'
 
 function App() {
   
@@ -17,9 +16,12 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/profile" element={<ProfilePage />} />
-      <Route path="*" element={<ErrorPage error={new Error('Page not found')} />} />
+      <Route path="/transactions" element={<PeriodTransactionsPage />} />
+      <Route path="*" element={<ErrorPage />} />
     </Routes>
   )
 }
+
+// добавить управление категориями и транзакциями и темой переключение!
 
 export default App
