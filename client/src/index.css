@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  /* Шрифты */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  /* Цвета — светлая тема (по умолчанию) */
+  --color-bg: #ffffff;
+  --color-bg-card: #f9f9f9;
+  --color-text: #111111;
+  --color-text-muted: #666666;
+  --color-border: #e5e5e5;
+  --color-accent: #000000;
+}
+
+/* Тёмная тема — автоматически при prefers-color-scheme: dark */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0a0a0a;
+    --color-bg-card: #141414;
+    --color-text: #f5f5f5;
+    --color-text-muted: #999999;
+    --color-border: #262626;
+    --color-accent: #ffffff;
+  }
+}
+
+/* Базовые стили */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  max-width: 80%;
+  margin: 0 auto;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Утилитарные классы для компонентов */
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn:hover { opacity: 0.9; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.btn-outline:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.text-muted { color: var(--color-text-muted); }
+.border-default { border-color: var(--color-border); }
