@@ -1,105 +1,193 @@
-import { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FaArrowLeft, FaChevronLeft, FaChevronRight, FaReceipt, FaCalendarDay } from 'react-icons/fa';
+import { FaArrowLeft, FaChevronLeft, FaChevronRight, FaCalendarAlt } from 'react-icons/fa';
 
-export function PeriodTransactionsPage() {
+export default function PeriodTransactionsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    media.addEventListener('change', handler);
-    return () => media.removeEventListener('change', handler);
-  }, []);
-
+  
+  // Константы стиля (в точности как на Dashboard)
   const c = {
-    bg: isDark ? '#0a0a0a' : '#fafafa', card: isDark ? '#141414' : '#ffffff',
-    text: isDark ? '#f5f5f5' : '#111111', muted: isDark ? '#999999' : '#666666',
-    border: isDark ? '#2a2a2a' : '#e5e5e5', accent: isDark ? '#ffffff' : '#000000',
-    green: '#16a34a', red: '#dc2626'
+    bg: '#0a0a0a',
+    card: '#141414',
+    text: '#f5f5f5',
+    muted: '#888888',
+    border: '#2a2a2a',
+    purple: '#8b5cf6',
+    green: '#22c55e',
   };
 
-  // Получаем даты из URL
-  const fromParam = searchParams.get('from') || new Date().toISOString().split('T')[0];
-  const toParam = searchParams.get('to') || fromParam;
+  // Логика даты
+  const dateParam = searchParams.get('from') || new Date().toISOString().split('T')[0];
+  const currentViewDate = new Date(dateParam);
 
-  // Парсим для навигации
-  const fromDate = new Date(fromParam);
-  const shiftPeriod = (months: number) => {
-    const newFrom = new Date(fromDate);
-    newFrom.setMonth(newFrom.getMonth() + months);
-    const newTo = new Date(newFrom);
-    newTo.setDate(newTo.getDate() + (new Date(newFrom.getFullYear(), newFrom.getMonth() + 1, 0).getDate() - 1));
-    setSearchParams({
-      from: newFrom.toISOString().split('T')[0],
-      to: newTo.toISOString().split('T')[0]
-    });
+  const shiftMonth = (offset) => {
+    const d = new Date(currentViewDate);
+    d.setMonth(d.getMonth() + offset);
+    setSearchParams({ from: d.toISOString().split('T')[0] });
   };
 
-  // Моковые данные за период
-  const periodTx = [
-    { id: 1, cat: 'Продукты', amount: -4500, date: '12.05.2026' },
-    { id: 2, cat: 'Фриланс', amount: 25000, date: '10.05.2026' },
-    { id: 3, cat: 'Кафе', amount: -890, date: '09.05.2026' },
-    { id: 4, cat: 'Аренда', amount: -35000, date: '01.05.2026' },
+  // Данные (замени на свои реальные данные)
+  const transactions = [
+    { id: 1, cat: 'Магнит', amount: -3200, date: '2026-05-12', type: 'expense' },
+    { id: 2, cat: 'Зарплата', amount: 85000, date: '2026-05-10', type: 'income' },
+    { id: 3, cat: 'Яндекс Такси', amount: -450, date: '2026-05-10', type: 'expense' },
   ];
 
-  const cardStyle: React.CSSProperties = { background: c.card, border: `1px solid ${c.border}`, borderRadius: '14px', padding: '1.25rem' };
-  const btnNav: React.CSSProperties = { background: 'none', border: `1px solid ${c.border}`, color: c.text, padding: '0.5rem 0.8rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' };
+  const filteredTransactions = useMemo(() => {
+    const targetMonth = currentViewDate.getMonth();
+    const targetYear = currentViewDate.getFullYear();
+    return transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+    }).sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [dateParam]);
+
+  const grouped = filteredTransactions.reduce((acc, tx) => {
+    if (!acc[tx.date]) acc[tx.date] = [];
+    acc[tx.date].push(tx);
+    return acc;
+  }, {});
+
+  const s = {
+    container: {
+      minHeight: '100vh',
+      background: c.bg,
+      color: c.text,
+      fontFamily: 'system-ui, sans-serif',
+      padding: '2rem 1rem'
+    },
+    content: {
+      maxWidth: '600px',
+      margin: '0 auto'
+    },
+    header: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: '2.5rem'
+    },
+    backLink: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      color: c.muted,
+      cursor: 'pointer',
+      fontSize: '0.9rem',
+      textDecoration: 'none',
+      border: 'none',
+      background: 'none'
+    },
+    calendarStrip: {
+      background: c.card,
+      border: `1px solid ${c.border}`,
+      borderRadius: '16px',
+      padding: '1rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: '2rem'
+    },
+    monthLabel: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem',
+      fontWeight: 700,
+      fontSize: '1.1rem',
+      textTransform: 'capitalize'
+    },
+    dateGroup: {
+      marginBottom: '1.5rem'
+    },
+    dateTitle: {
+      fontSize: '0.75rem',
+      color: c.muted,
+      fontWeight: 800,
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      marginBottom: '0.75rem',
+      paddingLeft: '0.25rem'
+    },
+    txRow: {
+      background: c.card,
+      border: `1px solid ${c.border}`,
+      borderRadius: '12px',
+      padding: '1rem',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '0.5rem'
+    },
+    categoryIcon: {
+      width: '36px',
+      height: '36px',
+      borderRadius: '10px',
+      background: 'rgba(139, 92, 246, 0.1)',
+      color: c.purple,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontWeight: 800,
+      fontSize: '0.9rem'
+    }
+  };
 
   return (
-    <div style={{ minHeight: '100vh', background: c.bg, color: c.text, fontFamily: 'system-ui, -apple-system, sans-serif', paddingBottom: '2rem', transition: 'background 0.3s, color 0.3s' }}>
-      {/* Шапка */}
-      <div style={{ maxWidth: '700px', margin: '0 auto', padding: '1.5rem 1rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: c.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', padding: 0 }}>
-          <FaArrowLeft /> Дашборд
-        </button>
-        <h1 style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Операции за период</h1>
-        <div style={{ width: '60px' }} /> {/* Spacer */}
-      </div>
-
-      <div style={{ maxWidth: '700px', margin: '0 auto', padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        
-        {/* Навигация по периодам */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', padding: '1rem 0' }}>
-          <button onClick={() => shiftPeriod(-1)} style={btnNav}><FaChevronLeft /> Пред.</button>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '0.8rem', color: c.muted, margin: 0 }}>Период</p>
-            <p style={{ fontSize: '1rem', fontWeight: 600, margin: '0.2rem 0 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <FaCalendarDay style={{ color: c.muted }} /> {fromDate.toLocaleDateString('ru', { month: 'long', year: 'numeric' })}
-            </p>
+    <div style={s.container}>
+      <div style={s.content}>
+        <div style={s.header}>
+          <button onClick={() => navigate('/dashboard')} style={s.backLink}>
+            <FaArrowLeft /> На дашборд
+          </button>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontWeight: 800, color: c.purple }}>FinMath</div>
           </div>
-          <button onClick={() => shiftPeriod(1)} style={btnNav}>След. <FaChevronRight /></button>
         </div>
 
-        {/* Список */}
-        <div style={cardStyle}>
-          <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FaReceipt style={{ color: c.muted }} /> {periodTx.length} операций
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {periodTx.map(tx => (
-              <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem', background: c.bg, borderRadius: '10px', border: `1px solid ${c.border}`, transition: 'transform 0.2s' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: c.card, border: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.muted, fontSize: '0.8rem' }}>{tx.cat[0]}</div>
-                  <div><p style={{ fontSize: '0.9rem', fontWeight: 500, margin: 0 }}>{tx.cat}</p><p style={{ fontSize: '0.75rem', color: c.muted, margin: '0.15rem 0 0' }}>{tx.date}</p></div>
-                </div>
-                <span style={{ fontSize: '1rem', fontWeight: 600, color: tx.amount > 0 ? c.green : c.text }}>
-                  {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString('ru-RU')} ₽
-                </span>
+        <div style={s.calendarStrip}>
+          <button onClick={() => shiftMonth(-1)} style={{ background: 'none', border: 'none', color: c.text, cursor: 'pointer' }}>
+            <FaChevronLeft />
+          </button>
+          <div style={s.monthLabel}>
+            <FaCalendarAlt size={16} style={{ color: c.purple }} />
+            {currentViewDate.toLocaleDateString('ru', { month: 'long', year: 'numeric' })}
+          </div>
+          <button onClick={() => shiftMonth(1)} style={{ background: 'none', border: 'none', color: c.text, cursor: 'pointer' }}>
+            <FaChevronRight />
+          </button>
+        </div>
+
+        {Object.keys(grouped).length > 0 ? (
+          Object.entries(grouped).map(([date, txs]) => (
+            <div key={date} style={s.dateGroup}>
+              <div style={s.dateTitle}>
+                {new Date(date).toLocaleDateString('ru', { day: 'numeric', month: 'long' })}
               </div>
-            ))}
-            {periodTx.length === 0 && (
-              <p style={{ textAlign: 'center', color: c.muted, padding: '2rem 0', fontSize: '0.9rem' }}>Нет операций за этот период</p>
-            )}
+              {txs.map(tx => (
+                <div key={tx.id} style={s.txRow}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={s.categoryIcon}>{tx.cat[0]}</div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{tx.cat}</div>
+                      <div style={{ fontSize: '0.7rem', color: c.muted }}>Операция #{tx.id}</div>
+                    </div>
+                  </div>
+                  <div style={{ 
+                    fontWeight: 800, 
+                    color: tx.amount > 0 ? c.green : c.text,
+                    fontSize: '1rem'
+                  }}>
+                    {tx.amount > 0 ? `+${tx.amount.toLocaleString()}` : tx.amount.toLocaleString()} ₽
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))
+        ) : (
+          <div style={{ textAlign: 'center', color: c.muted, marginTop: '4rem' }}>
+            Здесь пока ничего нет
           </div>
-        </div>
-
-        <p style={{ textAlign: 'center', color: c.muted, fontSize: '0.75rem', marginTop: '1rem' }}>
-          Листайте периоды для просмотра истории • Данные хранятся локально
-        </p>
+        )}
       </div>
     </div>
   );

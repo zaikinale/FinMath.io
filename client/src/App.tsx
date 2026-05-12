@@ -5,7 +5,7 @@ import RegisterPage from './pages/auth/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import ErrorPage from './pages/ErrorPage'
-import { PeriodTransactionsPage } from './pages/PeriodTransactionsPage'
+import PeriodTransactionsPage from './pages/PeriodTransactionsPage'
 
 function App() {
   

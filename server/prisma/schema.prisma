@@ -1,0 +1,53 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  password     String
+  aiApiKey     String?
+  sessions     Session[]     // Связь с сессиями
+  transactions Transaction[]
+  categories   Category[]
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  refreshToken String   @unique
+  userAgent    String?  // Информация об устройстве (браузере)
+  ip           String?
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+}
+
+model Category {
+  id           String        @id @default(uuid())
+  name         String
+  type         String        // "income" или "expense"
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  amount     Float
+  type       String   // "income" или "expense"
+  desc       String?
+  date       String   // Храним как YYYY-MM-DD для простоты фильтрации
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  createdAt  DateTime @default(now())
+}
