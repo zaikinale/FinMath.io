@@ -1,20 +1,36 @@
-export const TransactionList = ({ transactions, isDark, c }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {transactions.length > 0 ? transactions.map(tx => (
-        <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.8rem', borderBottom: `1px solid ${c.border}` }}>
-          <div style={{ display: 'flex', gap: '0.8rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: isDark ? '#222' : '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{tx.categoryId[0]}</div>
+import React from 'react';
+
+export const TransactionList = ({ transactions, isDark, c }) => {
+  if (!transactions || transactions.length === 0) {
+    return <div style={{ color: c.muted, textAlign: 'center', padding: '2rem' }}>Нет операций</div>;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {transactions.map((tx) => {
+        // Поддержка обоих вариантов именования категории
+        const categoryName = tx.category || tx.categoryId || "Без категории";
+        const isExpense = tx.type === 'expense' || tx.amount < 0;
+
+        return (
+          <div key={tx.id} style={{ 
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+            padding: '1rem', background: 'rgba(255,255,255,0.03)', 
+            borderRadius: '12px', border: `1px solid ${c.border}` 
+          }}>
             <div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{tx.desc || tx.categoryId}</div>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {tx.tags?.map(t => <span key={t} style={{ fontSize: '0.7rem', color: c.muted }}>#{t}</span>)}
-              </div>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{tx.desc || "Без описания"}</div>
+              <div style={{ fontSize: '0.75rem', color: c.purple }}>{categoryName}</div>
+            </div>
+            <div style={{ 
+              fontWeight: 800, 
+              color: isExpense ? '#ff4444' : '#00c853' 
+            }}>
+              {isExpense ? '' : '+'}{tx.amount.toLocaleString()} ₽
             </div>
           </div>
-          <div style={{ fontWeight: 700, color: tx.amount > 0 ? c.green : c.text }}>
-            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()} ₽
-          </div>
-        </div>
-      )) : <p style={{ textAlign: 'center', color: c.muted }}>Нет записей</p>}
+        );
+      })}
     </div>
   );
+};

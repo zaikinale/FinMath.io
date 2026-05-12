@@ -1,74 +1,140 @@
-import React, { useState } from 'react';
-import { FaTimes, FaPlus, FaTrashAlt } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaTimes, FaShieldAlt, FaSave, FaChevronRight, FaPlus, FaTrashAlt } from 'react-icons/fa';
 
 export const CategorySettingsModal = ({ isOpen, onClose, categories, setCategories, s, c }) => {
-  const [newCategory, setNewCategory] = useState("");
-  const [activeTab, setActiveTab] = useState("expense");
+  const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
+  const [selectedCatName, setSelectedCatName] = useState("");
+  const [newCatName, setNewCatName] = useState("");
+  const [tempLimit, setTempLimit] = useState("");
+
+  const currentCats = categories[activeTab] || [];
+
+  // Сброс выбора при смене таба
+  useEffect(() => {
+    if (currentCats.length > 0) {
+      const first = currentCats[0];
+      setSelectedCatName(typeof first === 'string' ? first : first.name);
+    } else {
+      setSelectedCatName("");
+    }
+  }, [activeTab, isOpen]);
+
+  // Синхронизация лимита
+  useEffect(() => {
+    const cat = currentCats.find(item => (typeof item === 'string' ? item : item.name) === selectedCatName);
+    setTempLimit(cat && typeof cat !== 'string' ? (cat.limit || "") : "");
+  }, [selectedCatName]);
 
   if (!isOpen) return null;
 
-  const handleAdd = (e) => {
+  const handleAddCategory = (e) => {
     e.preventDefault();
-    if (!newCategory.trim()) return;
+    if (!newCatName.trim()) return;
     
-    // Обновляем состояние категорий в родительском компоненте
+    const newItem = activeTab === 'expense' ? { name: newCatName.trim(), limit: null } : newCatName.trim();
+    
     setCategories({
       ...categories,
-      [activeTab]: [...categories[activeTab], newCategory.trim()]
+      [activeTab]: [...currentCats, newItem]
     });
-    setNewCategory("");
+    setNewCatName("");
+    setSelectedCatName(newCatName.trim());
   };
 
-  const handleDelete = (catToDelete) => {
+  const handleDelete = (name: string) => {
     setCategories({
       ...categories,
-      [activeTab]: categories[activeTab].filter(cat => cat !== catToDelete)
+      [activeTab]: currentCats.filter(cat => (typeof cat === 'string' ? cat : cat.name) !== name)
+    });
+    if (selectedCatName === name) setSelectedCatName("");
+  };
+
+  const handleSaveLimit = () => {
+    if (activeTab !== 'expense') return;
+    setCategories({
+      ...categories,
+      expense: categories.expense.map(cat => {
+        const name = typeof cat === 'string' ? cat : cat.name;
+        return name === selectedCatName ? { name, limit: tempLimit ? Number(tempLimit) : null } : cat;
+      })
     });
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001, padding: '1rem' }}>
-      <div style={{ ...s.card, width: '100%', maxWidth: '400px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
-          <h3 style={{ margin: 0 }}>Настройка категорий</h3>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
+      <div style={{ ...s.card, width: '100%', maxWidth: '700px', display: 'flex', flexDirection: 'column', background: '#141414', border: `1px solid ${c.border}`, padding: 0, overflow: 'hidden', borderRadius: '24px' }}>
+        
+        {/* Header */}
+        <div style={{ padding: '1.2rem 1.5rem', borderBottom: `1px solid ${c.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#141414' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+             <button onClick={() => setActiveTab('expense')} style={{ background: activeTab === 'expense' ? c.purple : 'transparent', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>Расходы</button>
+             <button onClick={() => setActiveTab('income')} style={{ background: activeTab === 'income' ? c.purple : 'transparent', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>Доходы</button>
+          </div>
           <FaTimes onClick={onClose} style={{ cursor: 'pointer', color: c.muted }} />
         </div>
 
-        {/* Табы: Расходы / Доходы */}
-        <div style={{ display: 'flex', gap: '0.5rem', background: s.isDark ? '#1a1a1a' : '#f0f0f0', padding: '4px', borderRadius: '10px', marginBottom: '1.5rem' }}>
-          <button onClick={() => setActiveTab('expense')} style={{ ...s.btn, flex: 1, background: activeTab === 'expense' ? c.card : 'transparent' }}>Расходы</button>
-          <button onClick={() => setActiveTab('income')} style={{ ...s.btn, flex: 1, background: activeTab === 'income' ? c.card : 'transparent' }}>Доходы</button>
-        </div>
-
-        {/* Форма добавления */}
-        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
-          <input 
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            style={s.input} 
-            placeholder="Название..." 
-          />
-          <button type="submit" style={{ ...s.btn, background: c.purple, color: '#fff', padding: '0 1.2rem' }}>
-            <FaPlus />
-          </button>
-        </form>
-
-        {/* Список текущих категорий */}
-        <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {categories[activeTab].map((cat) => (
-            <div key={cat} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: s.isDark ? '#1a1a1a' : '#f9f9f9', borderRadius: '8px', border: `1px solid ${c.border}` }}>
-              <span style={{ fontSize: '0.9rem' }}>{cat}</span>
-              <FaTrashAlt 
-                onClick={() => handleDelete(cat)}
-                style={{ cursor: 'pointer', color: '#dc2626', fontSize: '0.8rem', opacity: 0.7 }} 
+        <div style={{ display: 'flex', height: '450px' }}>
+          
+          {/* Sidebar */}
+          <div style={{ width: '40%', borderRight: `1px solid ${c.border}`, display: 'flex', flexDirection: 'column', background: '#0d0d0d' }}>
+            
+            {/* Add Form */}
+            <form onSubmit={handleAddCategory} style={{ padding: '1rem', borderBottom: `1px solid ${c.border}`, display: 'flex', gap: '0.5rem' }}>
+              <input 
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                placeholder="Новая..."
+                style={{ ...s.input, background: '#1a1a1a', fontSize: '0.8rem', padding: '0.5rem' }}
               />
-            </div>
-          ))}
-        </div>
+              <button type="submit" style={{ ...s.btn, background: c.purple, color: '#fff', padding: '0.5rem' }}><FaPlus /></button>
+            </form>
 
-        <button onClick={onClose} style={{ ...s.btn, width: '100%', marginTop: '1.5rem', border: `1px solid ${c.border}` }}>
-          Готово
-        </button>
+            {/* List */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {currentCats.map((cat) => {
+                const name = typeof cat === 'string' ? cat : cat.name;
+                const isActive = selectedCatName === name;
+                return (
+                  <div key={name} onClick={() => setSelectedCatName(name)} style={{ padding: '1rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isActive ? c.purple + '22' : 'transparent', borderLeft: `3px solid ${isActive ? c.purple : 'transparent'}` }}>
+                    <span style={{ color: '#fff', fontSize: '0.9rem' }}>{name}</span>
+                    <FaTrashAlt onClick={(e) => { e.stopPropagation(); handleDelete(name); }} style={{ color: '#ff4444', fontSize: '0.75rem', opacity: 0.5 }} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Settings Panel */}
+          <div style={{ width: '60%', padding: '2rem', background: '#141414', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center' }}>
+            {selectedCatName ? (
+              activeTab === 'expense' ? (
+                <div>
+                  <h2 style={{ color: '#fff', marginBottom: '1.5rem' }}>{selectedCatName}</h2>
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ color: c.muted, fontSize: '0.8rem', display: 'block', marginBottom: '0.5rem' }}>Месячный лимит (₽)</label>
+                    <input 
+                      type="number" 
+                      value={tempLimit} 
+                      onChange={(e) => setTempLimit(e.target.value)} 
+                      style={{ ...s.input, background: '#0d0d0d', color: '#fff', textAlign: 'center', fontSize: '1.4rem' }}
+                      placeholder="Без лимита"
+                    />
+                  </div>
+                  <button onClick={handleSaveLimit} style={{ ...s.btn, background: c.purple, color: '#fff', width: '100%', justifyContent: 'center' }}>
+                    <FaSave style={{ marginRight: '8px' }} /> Сохранить
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <h2 style={{ color: '#fff' }}>{selectedCatName}</h2>
+                  <p style={{ color: c.muted }}>Для категорий доходов лимиты не предусмотрены.</p>
+                </div>
+              )
+            ) : (
+              <span style={{ color: c.muted }}>Выберите или добавьте категорию</span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
