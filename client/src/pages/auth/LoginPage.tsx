@@ -4,16 +4,21 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FaEnvelope, FaLock, FaArrowLeft } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
+import { AuthService } from '../../api/auth.service'; // Проверь путь
+import { useAuth } from '../../context/AuthContext';   // Достаем наш хук
+import axios from 'axios';
 
 const loginSchema = z.object({
   email: z.string().email('Некорректный email'),
-  password: z.string().min(6, 'Минимум 6 символов'),
+  password: z.string().min(1, 'Введите пароль'),
 });
 
 type LoginInput = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { setUser } = useAuth(); // Функция для обновления глобального состояния
+  const [serverError, setServerError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   useEffect(() => {
@@ -28,8 +33,24 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginInput) => {
-    console.log('Login:', data);
-    navigate('/dashboard');
+    setServerError(null);
+    try {
+      // 1. Делаем реальный запрос к бекенду
+      const response = await AuthService.login(data.email, data.password);
+      
+      // 2. Обновляем состояние пользователя в AuthContext
+      // В response.user должны быть данные, которые вернул бекенд
+      setUser(response.user); 
+      
+      // 3. Только теперь переходим
+      navigate('/dashboard');
+    } catch (err: any) {
+      if (axios.isAxiosError(err)) {
+        setServerError(err.response?.data?.message || 'Неверный email или пароль');
+      } else {
+        setServerError('Ошибка подключения к серверу');
+      }
+    }
   };
 
   const c = {
@@ -47,7 +68,8 @@ export default function LoginPage() {
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '0.7rem 0.85rem 0.7rem 2.3rem', background: c.inputBg,
     border: `1px solid ${c.border}`, borderRadius: '10px', color: c.text,
-    fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s'
+    fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s',
+    outline: 'none'
   };
 
   return (
@@ -63,6 +85,13 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
+          {/* Отображение ошибки сервера */}
+          {serverError && (
+            <div style={{ padding: '0.7rem', background: `${c.error}15`, border: `1px solid ${c.error}30`, color: c.error, borderRadius: '8px', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center' }}>
+              {serverError}
+            </div>
+          )}
+
           <div style={{ marginBottom: '1.1rem' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.4rem', color: c.muted }}>Email</label>
             <div style={{ position: 'relative' }}>
@@ -85,7 +114,7 @@ export default function LoginPage() {
             <button type="button" style={{ background: 'none', border: 'none', color: c.muted, fontSize: '0.82rem', cursor: 'pointer', padding: 0 }}>Забыли пароль?</button>
           </div>
 
-          <button type="submit" disabled={isSubmitting} style={{ width: '100%', padding: '0.8rem', background: c.accent, color: c.accentText, border: 'none', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 500, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+          <button type="submit" disabled={isSubmitting} style={{ width: '100%', padding: '0.8rem', background: c.accent, color: c.accentText, border: 'none', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 600, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1, transition: 'all 0.2s' }}>
             {isSubmitting ? 'Вход...' : 'Войти'}
           </button>
 

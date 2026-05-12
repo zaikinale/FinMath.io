@@ -4,6 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FaEnvelope, FaLock, FaUser, FaArrowLeft } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
+import { AuthService } from '../../api/auth.service.ts';
+import { useAuth } from '../../context/AuthContext'; // Импортируем хук
+import axios from 'axios';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Минимум 2 символа'),
@@ -19,7 +22,9 @@ type RegisterInput = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { setUser } = useAuth(); // Функция для записи юзера в глобальный стейт
   const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
@@ -33,8 +38,24 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: RegisterInput) => {
-    console.log('Register:', data);
-    navigate('/dashboard');
+    setServerError(null);
+    try {
+      // 1. Вызываем сервис регистрации
+      const response = await AuthService.register(data.email, data.password);
+      
+      // 2. ОБЯЗАТЕЛЬНО сохраняем полученного юзера в контекст
+      // Это переключит isAuth в true и ProtectedRoute пропустит нас
+      setUser(response.user);
+      
+      // 3. Теперь переход сработает корректно
+      navigate('/dashboard');
+    } catch (err: any) {
+      if (axios.isAxiosError(err)) {
+        setServerError(err.response?.data?.message || 'Ошибка при регистрации');
+      } else {
+        setServerError('Произошла непредвиденная ошибка');
+      }
+    }
   };
 
   const c = {
@@ -52,7 +73,8 @@ export default function RegisterPage() {
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '0.7rem 0.85rem 0.7rem 2.3rem', background: c.inputBg,
     border: `1px solid ${c.border}`, borderRadius: '10px', color: c.text,
-    fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s'
+    fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s',
+    outline: 'none'
   };
 
   return (
@@ -68,6 +90,12 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
+          {serverError && (
+            <div style={{ background: `${c.error}15`, color: c.error, padding: '0.75rem', borderRadius: '10px', fontSize: '0.85rem', marginBottom: '1.25rem', textAlign: 'center', border: `1px solid ${c.error}30` }}>
+              {serverError}
+            </div>
+          )}
+
           <div style={{ marginBottom: '1.1rem' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.4rem', color: c.muted }}>Имя</label>
             <div style={{ position: 'relative' }}>
@@ -104,8 +132,8 @@ export default function RegisterPage() {
             {errors.confirmPassword && <p style={{ color: c.error, fontSize: '0.78rem', marginTop: '0.3rem' }}>{errors.confirmPassword.message}</p>}
           </div>
 
-          <button type="submit" disabled={isSubmitting} style={{ width: '100%', padding: '0.8rem', background: c.accent, color: c.accentText, border: 'none', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 500, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.5 : 1, transition: 'opacity 0.2s' }}>
-            {isSubmitting ? 'Регистрация...' : 'Зарегистрироваться'}
+          <button type="submit" disabled={isSubmitting} style={{ width: '100%', padding: '0.8rem', background: c.accent, color: c.accentText, border: 'none', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 600, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1, transition: 'all 0.2s' }}>
+            {isSubmitting ? 'Создание аккаунта...' : 'Зарегистрироваться'}
           </button>
 
           <div style={{ position: 'relative', margin: '1.3rem 0', textAlign: 'center' }}>

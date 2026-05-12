@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
@@ -7,21 +7,34 @@ import ProfilePage from './pages/ProfilePage'
 import ErrorPage from './pages/ErrorPage'
 import PeriodTransactionsPage from './pages/PeriodTransactionsPage'
 
+// Импортируем созданные компоненты
+import { AuthProvider } from './context/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
+
 function App() {
-  
   return (
-    <Routes>
-      <Route index element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/transactions" element={<PeriodTransactionsPage />} />
-      <Route path="*" element={<ErrorPage />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        {/* Публичные роуты: доступны всем */}
+        <Route index element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        {/* Защищенные роуты: только для авторизованных */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/transactions" element={<PeriodTransactionsPage />} />
+          
+          {/* Сюда позже добавим управление категориями */}
+          {/* <Route path="/categories" element={<CategoriesPage />} /> */}
+        </Route>
+
+        {/* Ошибки и прочее */}
+        <Route path="*" element={<ErrorPage />} />
+      </Routes>
+    </AuthProvider>
   )
 }
-
-// добавить управление категориями и транзакциями и темой переключение!
 
 export default App
