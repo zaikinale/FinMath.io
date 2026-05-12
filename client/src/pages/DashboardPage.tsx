@@ -1,7 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { FaPlus, FaRobot, FaChartPie, FaCog, FaChevronLeft, FaChevronRight, FaUser, FaStickyNote, FaTimes, FaSave, FaFileAlt, FaCalendarAlt } from "react-icons/fa";
+import { FaPlus, FaRobot, FaChartPie, FaCog, FaChevronLeft, FaChevronRight, FaUser, FaStickyNote, FaTimes, FaSave, FaFileAlt, FaCalendarAlt, FaTrash } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+
+// Импорт сервиса
+import { FinanceService } from "../api/finance.service.js";
 
 // Chart.js
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
@@ -16,7 +19,8 @@ import { FinancialSummary } from "../components/FinancialSummary";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// --- МОДАЛКА ВЫБОРА ПЕРИОДА ДЛЯ ОТЧЕТА ---
+// --- МОДАЛКИ ---
+
 const ReportPeriodModal = ({ isOpen, onClose, onSelect, c, s }) => {
   const [customRange, setCustomRange] = useState({ start: '', end: '' });
   if (!isOpen) return null;
@@ -52,8 +56,7 @@ const ReportPeriodModal = ({ isOpen, onClose, onSelect, c, s }) => {
   );
 };
 
-// --- МОДАЛКА ЗАМЕТОК ---
-const NoteModal = ({ isOpen, onClose, onSubmit, editNote, c, s }) => {
+const NoteModal = ({ isOpen, onClose, onSubmit, onDelete, editNote, c, s }) => {
   const { register, handleSubmit, reset, setValue } = useForm();
   useEffect(() => {
     if (editNote) {
@@ -72,14 +75,18 @@ const NoteModal = ({ isOpen, onClose, onSubmit, editNote, c, s }) => {
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <input {...register("title", { required: true })} placeholder="Заголовок" style={{ ...s.card, padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: `1px solid ${c.border}`, color: c.text }} />
           <textarea {...register("content")} placeholder="Текст заметка..." rows={4} style={{ ...s.card, padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: `1px solid ${c.border}`, color: c.text, resize: 'none' }} />
-          <button type="submit" style={{ ...s.btn, background: c.purple, color: '#fff' }}><FaSave /> Сохранить</button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button type="submit" style={{ ...s.btn, flex: 1, background: c.purple, color: '#fff' }}><FaSave /> Сохранить</button>
+            {editNote && (
+               <button type="button" onClick={() => onDelete(editNote.id)} style={{ ...s.btn, background: '#ef4444', color: '#fff' }}><FaTrash /></button>
+            )}
+          </div>
         </form>
       </div>
     </div>
   );
 };
 
-// --- КАЛЕНДАРЬ ---
 const CalendarNav = ({ value, onChange, transactions, c, onDateClick }) => {
   const date = new Date(value);
   const year = date.getFullYear();
@@ -134,36 +141,80 @@ export default function DashboardPage() {
   
   const [showSummary, setShowSummary] = useState(false);
   const [reportPeriod, setReportPeriod] = useState(null);
-  const [notes, setNotes] = useState([{ id: '1', title: 'Финансовая цель', content: 'Откладывать 10% от дохода на инвестиции' }]);
+  const [notes, setNotes] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
   
-  const [categories, setCategories] = useState({
-    expense: ['Еда', 'Транспорт', 'Жилье', 'Досуг', 'Здоровье'],
-    income: ['Зарплата', 'Перевод', 'Бонус']
-  });
-  
-  const [transactions, setTransactions] = useState([
-    { id: '1', amount: -3200, type: 'expense', categoryId: 'Еда', date: '2026-05-12', desc: 'Магнит' },
-    { id: '2', amount: 85000, type: 'income', categoryId: 'Зарплата', date: '2026-05-10', desc: 'Фриланс' },
-  ]);
+  const [categories, setCategories] = useState({ expense: [], income: [] });
+  const [transactions, setTransactions] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [cats, txs, notesData] = await Promise.all([
+          FinanceService.getCategories(),
+          FinanceService.getTransactions(), // Загружаем все для "Последних операций"
+          FinanceService.getNotes()
+        ]);
+        
+        setCategories({
+          expense: cats.filter(c => c.type === 'expense'),
+          income: cats.filter(c => c.type === 'income')
+        });
+        setTransactions(txs);
+        setNotes(notesData);
+      } catch (err) {
+        console.error("Ошибка при загрузке данных:", err);
+      }
+    };
+    fetchData();
+  }, []);
 
   const { register, handleSubmit, reset, watch, setValue } = useForm({
     defaultValues: { type: 'expense', date: new Date().toISOString().split('T')[0] }
   });
 
-  const onSubmit = (data) => {
-    const newTx = { ...data, id: Date.now().toString(), amount: data.type === 'expense' ? -Math.abs(Number(data.amount)) : Math.abs(Number(data.amount)) };
-    setTransactions([newTx, ...transactions]);
-    setIsModalOpen(false);
-    reset();
+  const onSubmit = async (data) => {
+    try {
+      const response = await FinanceService.createTransaction({
+        ...data,
+        amount: Number(data.amount)
+      });
+      if (response.warning) alert(response.warning);
+      setTransactions([response.transaction, ...transactions]);
+      setIsModalOpen(false);
+      reset();
+    } catch (err) {
+      alert("Ошибка при сохранении транзакции");
+    }
   };
 
-  const onNoteSubmit = (data) => {
-    if (editingNote) setNotes(notes.map(n => n.id === editingNote.id ? { ...n, ...data } : n));
-    else setNotes([{ ...data, id: Date.now().toString() }, ...notes]);
-    setIsNoteModalOpen(false);
-    setEditingNote(null);
+  const onNoteSubmit = async (data) => {
+    try {
+      if (editingNote) {
+        const updated = await FinanceService.updateNote(editingNote.id, data);
+        setNotes(notes.map(n => n.id === updated.id ? updated : n));
+      } else {
+        const created = await FinanceService.createNote(data);
+        setNotes([created, ...notes]);
+      }
+      setIsNoteModalOpen(false);
+      setEditingNote(null);
+    } catch (e) {
+      alert("Ошибка при сохранении заметки");
+    }
+  };
+
+  const onNoteDelete = async (id) => {
+    if (!window.confirm("Удалить заметку?")) return;
+    try {
+      await FinanceService.deleteNote(id);
+      setNotes(notes.filter(n => n.id !== id));
+      setIsNoteModalOpen(false);
+      setEditingNote(null);
+    } catch (e) {
+      alert("Ошибка при удалении");
+    }
   };
 
   const c = {
@@ -182,7 +233,10 @@ export default function DashboardPage() {
   const chartData = useMemo(() => ({
     labels: ['Расходы', 'Доходы'],
     datasets: [{
-      data: [transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0), transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)],
+      data: [
+        transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0),
+        transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0)
+      ],
       backgroundColor: [c.purple, isDark ? '#333' : '#e0e0e0'], borderWidth: 0, hoverOffset: 10
     }]
   }), [transactions, isDark, c.purple]);
@@ -193,33 +247,74 @@ export default function DashboardPage() {
     setShowSummary(true);
   };
 
+  const totalBalance = transactions.reduce((acc, t) => acc + Number(t.amount), 0);
+
+  // Сортировка для истории (сначала новые)
+  const sortedTransactions = useMemo(() => {
+    return [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [transactions]);
+
   return (
-    <div style={{ minHeight: '100vh', background: c.bg, color: c.text, fontFamily: 'system-ui, sans-serif', paddingBottom: '3rem' }}>
-      <nav style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '80%', margin: '0 auto' }}>
-        <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>FinMath</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button onClick={() => setIsModalOpen(true)} style={{ ...s.btn, background: c.accent, color: isDark ? '#000' : '#fff' }}><FaPlus size={12} /> Операция</button>
-          <button style={s.btn} onClick={() => navigate('/profile')}><FaUser /> Профиль</button>
+    <div style={{ minHeight: '100vh', background: c.bg, color: c.text, fontFamily: 'system-ui, sans-serif' }}>
+      {/* СТИКИ ШАПКА */}
+      <nav style={{ 
+        position: 'sticky', top: 0, zIndex: 100,
+        background: c.bg + 'CC', backdropFilter: 'blur(10px)',
+        padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+      }}>
+        <div style={{ maxWidth: '900px', width: '100%', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>FinMath</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button onClick={() => setIsModalOpen(true)} style={{ ...s.btn, background: c.accent, color: isDark ? '#000' : '#fff' }}><FaPlus size={12} /> Операция</button>
+            <button style={s.btn} onClick={() => navigate('/profile')}><FaUser /> Профиль</button>
+          </div>
         </div>
       </nav>
 
-      <main style={{ maxWidth: '900px', margin: '2rem auto', padding: '0 1rem', display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem' }}>
+      <main style={{ maxWidth: '900px', margin: '2rem auto', padding: '0 1rem', display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem', alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={s.card}>
+          {/* БАЛАНС (можно тоже сделать sticky, если нужно) */}
+          <div style={{ ...s.card, position: 'sticky', top: '80px', zIndex: 50 }}>
             <p style={{ color: c.muted, fontSize: '0.8rem', margin: '0 0 0.5rem 0' }}>ОБЩИЙ БАЛАНС</p>
-            <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 800 }}>{transactions.reduce((acc, t) => acc + t.amount, 0).toLocaleString()} ₽</h2>
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+            <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 800, color: totalBalance < 0 ? '#ef4444' : c.text }}>
+              {totalBalance.toLocaleString()} ₽
+            </h2>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', borderTop: `1px solid ${c.border}`, paddingTop: '1.25rem' }}>
+              {[
+                { label: 'Неделя', days: 7 },
+                { label: 'Месяц', days: 30 },
+                { label: 'Год', days: 365 }
+              ].map(period => {
+                const now = new Date();
+                const cutoff = new Date(now.setDate(now.getDate() - period.days));
+                const totalExpense = transactions
+                  .filter(t => t.type === 'expense' && new Date(t.date) >= cutoff)
+                  .reduce((acc, t) => acc + Math.abs(Number(t.amount)), 0);
+
+                return (
+                  <div key={period.label} style={{ flex: 1 }}>
+                    <p style={{ color: c.muted, fontSize: '0.65rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{period.label}</p>
+                    <p style={{ fontSize: '0.95rem', fontWeight: 700, margin: '2px 0 0 0' }}>-{totalExpense.toLocaleString()} ₽</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
                 <button onClick={() => setIsAiReportOpen(true)} style={{ ...s.btn, flex: 1, border: `1px solid ${c.purple}44`, background: 'transparent', color: c.purple }}><FaRobot /> Спросить ИИ</button>
                 <button onClick={() => setIsPeriodModalOpen(true)} style={{ ...s.btn, flex: 1, background: c.purple, color: '#fff' }}><FaFileAlt /> Отчет</button>
             </div>
           </div>
+
           <div style={s.card}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem' }}>История за {filterDate}</h3>
-            <TransactionList transactions={transactions.filter(t => t.date === filterDate)} isDark={isDark} c={c} />
+            <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem' }}>Последние операции</h3>
+            <TransactionList transactions={sortedTransactions} isDark={isDark} c={c} />
           </div>
         </div>
 
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {/* СТИКИ БОКОВАЯ ПАНЕЛЬ */}
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'sticky', top: '80px' }}>
           <CalendarNav 
             value={filterDate} 
             onChange={setFilterDate} 
@@ -238,7 +333,7 @@ export default function DashboardPage() {
               <h3 style={{ fontSize: '0.9rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FaStickyNote size={14} /> Заметки</h3>
               <button onClick={() => { setEditingNote(null); setIsNoteModalOpen(true); }} style={{ background: 'none', border: 'none', color: c.purple, cursor: 'pointer' }}><FaPlus size={12} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto' }}>
               {notes.map(note => (
                 <div key={note.id} onClick={() => { setEditingNote(note); setIsNoteModalOpen(true); }} style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${c.border}`, cursor: 'pointer' }}>
                   <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px' }}>{note.title}</div>
@@ -255,7 +350,7 @@ export default function DashboardPage() {
       <AiReportModal isOpen={isAiReportOpen} onClose={() => setIsAiReportOpen(false)} onGenerate={() => {}} loading={false} report={null} {...{ s, c }} />
       <ReportPeriodModal isOpen={isPeriodModalOpen} onClose={() => setIsPeriodModalOpen(false)} onSelect={handleOpenReport} c={c} s={s} />
       <CategorySettingsModal isOpen={isCatModalOpen} onClose={() => setIsCatModalOpen(false)} categories={categories} setCategories={setCategories} s={s} c={c} />
-      <NoteModal isOpen={isNoteModalOpen} onClose={() => { setIsNoteModalOpen(false); setEditingNote(null); }} onSubmit={onNoteSubmit} editNote={editingNote} c={c} s={s} />
+      <NoteModal isOpen={isNoteModalOpen} onClose={() => { setIsNoteModalOpen(false); setEditingNote(null); }} onSubmit={onNoteSubmit} onDelete={onNoteDelete} editNote={editingNote} c={c} s={s} />
 
       {showSummary && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: c.bg, padding: '2rem', overflowY: 'auto' }}>

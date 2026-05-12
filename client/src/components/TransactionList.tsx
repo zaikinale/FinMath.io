@@ -8,8 +8,11 @@ export const TransactionList = ({ transactions, isDark, c }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       {transactions.map((tx) => {
-        // Поддержка обоих вариантов именования категории
-        const categoryName = tx.category || tx.categoryId || "Без категории";
+        // Проверяем, является ли категория объектом или строкой
+        const categoryDisplay = typeof tx.category === 'object' && tx.category !== null
+          ? tx.category.name 
+          : (tx.category || tx.categoryId || "Без категории");
+
         const isExpense = tx.type === 'expense' || tx.amount < 0;
 
         return (
@@ -20,13 +23,14 @@ export const TransactionList = ({ transactions, isDark, c }) => {
           }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{tx.desc || "Без описания"}</div>
-              <div style={{ fontSize: '0.75rem', color: c.purple }}>{categoryName}</div>
+              {/* Выводим именно строку categoryDisplay */}
+              <div style={{ fontSize: '0.75rem', color: c.purple }}>{categoryDisplay}</div>
             </div>
             <div style={{ 
               fontWeight: 800, 
               color: isExpense ? '#ff4444' : '#00c853' 
             }}>
-              {isExpense ? '' : '+'}{tx.amount.toLocaleString()} ₽
+              {isExpense ? '' : '+'}{Number(tx.amount).toLocaleString()} ₽
             </div>
           </div>
         );

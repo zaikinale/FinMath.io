@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.route.js';
 import categoryRoutes from './routes/category.routes.js';
 import transactionRoutes from './routes/transaction.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import noteRoutes from './routes/note.routes.js'
 // import noteRoutes from './routes/note.routes.js'; // Добавь, когда напишем
 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes); // Исправил путь и добавил роут
 app.use('/api/transactions', transactionRoutes); // Добавил транзакции
 app.use('/api/reports', reportRoutes);
+app.use('/api/notes', noteRoutes);
 
 // --- Обработка несуществующих маршрутов (404) ---
 app.use((req, res) => {
