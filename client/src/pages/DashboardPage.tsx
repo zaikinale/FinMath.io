@@ -213,6 +213,10 @@ export default function DashboardPage() {
   const [currentPeriodType, setCurrentPeriodType] = useState<'week' | 'month' | 'year' | 'custom'>('month');
   const [currentDateRange, setCurrentDateRange] = useState<string>('');
 
+  // --- СТЕЙТЫ ДЛЯ ОБЫЧНЫХ ОТЧЕТОВ ---
+  const [reportData, setReportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -409,10 +413,43 @@ export default function DashboardPage() {
     }]
   }), [transactions, isDark, c.purple]);
 
-  const handleOpenReport = (period) => {
-    setReportPeriod(period);
+  // --- ОБРАБОТЧИК ДЛЯ СБОРА И ЗАГРУЗКИ ОБЫЧНОГО ОТЧЕТА ---
+  const handleOpenReport = async (period) => {
     setIsPeriodModalOpen(false);
+    setReportLoading(true);
     setShowSummary(true);
+    setReportPeriod(period);
+
+    let start = '';
+    let end = formatDateString(new Date());
+    const now = new Date();
+
+    if (period === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      start = formatDateString(weekAgo);
+    } else if (period === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setMonth(now.getMonth() - 1);
+      start = formatDateString(monthAgo);
+    } else if (period === 'year') {
+      const yearAgo = new Date();
+      yearAgo.setFullYear(now.getFullYear() - 1);
+      start = formatDateString(yearAgo);
+    } else {
+      start = period.start;
+      end = period.end;
+    }
+
+    try {
+      const data = await FinanceService.getReport(start, end);
+      setReportData(data);
+    } catch (err) {
+      console.error("Ошибка при загрузке финансового отчета:", err);
+      alert("Не удалось загрузить данные отчета с сервера");
+    } finally {
+      setReportLoading(false);
+    }
   };
 
   const totalBalance = transactions.reduce((acc, t) => {
@@ -575,7 +612,21 @@ export default function DashboardPage() {
       {showSummary && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: c.bg, padding: '2rem', overflowY: 'auto' }}>
             <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-                <FinancialSummary period={reportPeriod} transactions={transactions} categories={categories} onBack={() => setShowSummary(false)} s={s} c={c} />
+              {reportLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '50vh', gap: '1rem' }}>
+                  <p style={{ color: c.muted, fontSize: '0.9rem' }}>Загрузка финансового отчета...</p>
+                </div>
+              ) : (
+                <FinancialSummary 
+                  period={reportPeriod} 
+                  reportData={reportData} 
+                  transactions={transactions} 
+                  categories={categories} 
+                  onBack={() => { setShowSummary(false); setReportData(null); }} 
+                  s={s} 
+                  c={c} 
+                />
+              )}
             </div>
         </div>
       )}
