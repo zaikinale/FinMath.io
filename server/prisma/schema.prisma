@@ -15,8 +15,9 @@ model User {
   sessions     Session[]
   transactions Transaction[]
   categories   Category[]
-  budgets      Budget[]      // Добавили связь с бюджетами
-  notes        Note[]        // Твои заметки из UI тоже надо хранить в БД
+  budgets      Budget[]      
+  notes        Note[]        // Обычные текстовые заметки пользователя
+  aiReports    AiReport[]    // Новая связь: сохраненные отчеты аналитики
 }
 
 model Session {
@@ -34,27 +35,27 @@ model Category {
   id           String        @id @default(uuid())
   name         String
   type         String        // "income" или "expense"
-  icon         String?       // Для кастомизации (FaPlus, FaFood и т.д.)
-  color        String?       // Hex-код цвета для графиков
+  icon         String?       
+  color        String?       
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
-  budget       Budget?       // Связь с лимитом
+  budget       Budget?       
 }
 
 model Transaction {
   id         String   @id @default(uuid())
-  amount     Decimal  @db.Decimal(12, 2) // Точные деньги: до 10 млрд с 2 знаками
+  amount     Decimal  @db.Decimal(12, 2) 
   type       String   
   desc       String?
-  date       DateTime @db.Date // Лучше хранить как нативный Date для адекватных запросов
+  date       DateTime @db.Date 
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
   createdAt  DateTime @default(now())
 
-  @@index([userId, date]) // Ускоряет фильтрацию по датам
+  @@index([userId, date]) 
 }
 
 model Budget {
@@ -68,12 +69,28 @@ model Budget {
   @@index([userId])
 }
 
+// 1. Модель для обычных пользовательских заметок
 model Note {
   id        String   @id @default(uuid())
   title     String
-  content   String?
+  content   String?  @db.Text
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// 2. Новая модель для ИИ-отчетов аналитики
+model AiReport {
+  id          String   @id @default(uuid())
+  periodType  String   // "week", "month", "year", "custom" (согласно твоему UI)
+  dateRange   String   // Например, "10.05.2026 - 17.05.2026" для наглядности в списках
+  insight     String   @db.Text // Сам Markdown текст отчета
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt]) // Индекс для быстрого вывода истории отчетов от свежих к старым
 }

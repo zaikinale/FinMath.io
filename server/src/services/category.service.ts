@@ -22,17 +22,20 @@ export class CategoryService {
   }
 
   static async update(userId: string, categoryId: string, data: any) {
+    // Фронтенд шлет { budget: 1000 }, поэтому извлекаем либо budget, либо budgetAmount
+    const incomingAmount = data.budget !== undefined ? data.budget : data.budgetAmount;
+  
     return await prisma.category.update({
       where: { id: categoryId, userId },
       data: {
         name: data.name,
         icon: data.icon,
         color: data.color,
-        // Если передан budgetAmount, обновляем или создаем лимит
-        budget: data.budgetAmount !== undefined ? {
+        // Если передано число (или 0), делаем upsert связанной записи лимита
+        budget: incomingAmount !== undefined ? {
           upsert: {
-            create: { amount: data.budgetAmount, userId },
-            update: { amount: data.budgetAmount }
+            create: { amount: Number(incomingAmount), userId },
+            update: { amount: Number(incomingAmount) }
           }
         } : undefined
       },

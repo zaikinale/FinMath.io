@@ -22,10 +22,17 @@ export const CategorySettingsModal = ({ isOpen, onClose, categories, setCategori
     }
   }, [activeTab, isOpen]);
 
-  // Синхронизация лимита при выборе категории
+  // СИНХРОНИЗАЦИЯ ЛИМИТА: Исправлено чтение вложенного объекта budget из Prisma
   useEffect(() => {
     const cat = currentCats.find(item => item.id === selectedCatId);
-    setTempLimit(cat?.limit?.toString() || "");
+    
+    if (cat?.budget && typeof cat.budget === 'object') {
+      // Если бэкенд прислал объект лимита { id, amount, ... }, берем amount
+      setTempLimit(cat.budget.amount?.toString() || "");
+    } else {
+      // Если budget равен null или undefined
+      setTempLimit("");
+    }
   }, [selectedCatId, currentCats]);
 
   if (!isOpen) return null;
@@ -42,12 +49,15 @@ export const CategorySettingsModal = ({ isOpen, onClose, categories, setCategori
         type: activeTab
       });
 
+      // Гарантируем наличие поля budget, чтобы избежать багов при рендере
+      const safeCreated = { ...created, budget: null };
+
       setCategories({
         ...categories,
-        [activeTab]: [...currentCats, created]
+        [activeTab]: [...currentCats, safeCreated]
       });
       setNewCatName("");
-      setSelectedCatId(created.id);
+      setSelectedCatId(safeCreated.id);
     } catch (err) {
       console.error("Ошибка при создании:", err);
       alert("Не удалось создать категорию");
@@ -75,22 +85,24 @@ export const CategorySettingsModal = ({ isOpen, onClose, categories, setCategori
     }
   };
 
-  // --- ЭНДПОИНТ: СОХРАНЕНИЕ ЛИМИТА (Только для расходов) ---
+  // --- ЭНДПОИНТ: СОХРАНЕНИЕ ЛИМИТА (Исправлен ключ на budgetAmount) ---
   const handleSaveLimit = async () => {
     if (activeTab !== 'expense' || !selectedCatId || loading) return;
 
     setLoading(true);
     try {
+      // Шлем ИМЕННО budgetAmount, чтобы пробить валидацию в Prisma сервисе бэкенда
       const updated = await FinanceService.updateCategory(selectedCatId, {
-        limit: tempLimit ? Number(tempLimit) : null
+        budgetAmount: tempLimit ? Number(tempLimit) : null
       });
 
       setCategories({
         ...categories,
         expense: categories.expense.map(cat => cat.id === updated.id ? updated : cat)
       });
-      alert("Лимит обновлен");
+      alert("Лимит успешно обновлен");
     } catch (err) {
+      console.error("Ошибка сохранения лимита:", err);
       alert("Ошибка сохранения");
     } finally {
       setLoading(false);

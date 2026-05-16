@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { FaPlus, FaRobot, FaChartPie, FaCog, FaChevronLeft, FaChevronRight, FaUser, FaStickyNote, FaTimes, FaSave, FaFileAlt, FaCalendarAlt, FaTrash } from "react-icons/fa";
+import { FaPlus, FaRobot, FaChartPie, FaCog, FaChevronLeft, FaChevronRight, FaUser, FaStickyNote, FaTimes, FaSave, FaFileAlt, FaCalendarAlt, FaTrash, FaHistory } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import ReactMarkdown from 'react-markdown';
 
 // Импорт сервиса
 import { FinanceService } from "../api/finance.service.js";
@@ -19,7 +20,7 @@ import { FinancialSummary } from "../components/FinancialSummary";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// --- МОДАЛКИ ---
+// --- ВСПОМОГАТЕЛЬНЫЕ КОМПОНЕНТЫ МОДАЛОК И КАЛЕНДАРЯ ---
 
 const ReportPeriodModal = ({ isOpen, onClose, onSelect, c, s }) => {
   const [customRange, setCustomRange] = useState({ start: '', end: '' });
@@ -87,6 +88,55 @@ const NoteModal = ({ isOpen, onClose, onSubmit, onDelete, editNote, c, s }) => {
   );
 };
 
+const ViewAiReportModal = ({ isOpen, onClose, report, onDelete, c, s }) => {
+  if (!isOpen || !report) return null;
+
+  const translatePeriod = (type) => {
+    const map = { week: 'Неделя', month: 'Месяц', year: 'Год', custom: 'Период' };
+    return map[type] || type;
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
+      <div style={{ ...s.card, width: '100%', maxWidth: '520px', padding: '1.5rem', border: `1px solid ${c.border}`, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ background: c.purple + '22', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
+              <FaRobot color={c.purple} size={18} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Архивный отчет ИИ</h3>
+              <p style={{ margin: 0, fontSize: '0.75rem', color: c.muted }}>{translatePeriod(report.periodType)} ({report.dateRange})</p>
+            </div>
+          </div>
+          <FaTimes onClick={onClose} style={{ cursor: 'pointer', color: c.muted }} />
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '12px', border: `1px solid ${c.border}`, fontSize: '0.85rem', lineHeight: 1.6, color: c.text }}>
+          <ReactMarkdown components={{
+            h3: ({...props}) => <h3 style={{ color: c.purple, fontSize: '1rem', fontWeight: 700, margin: '1.2rem 0 0.5rem 0', borderBottom: `1px solid ${c.border}44`, paddingBottom: '0.3rem' }} {...props} />,
+            h4: ({...props}) => <h4 style={{ color: c.purple, fontSize: '0.95rem', fontWeight: 700, margin: '1.2rem 0 0.5rem 0', borderBottom: `1px solid ${c.border}44`, paddingBottom: '0.3rem' }} {...props} />,
+            ul: ({...props}) => <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0' }} {...props} />,
+            li: ({...props}) => <li style={{ marginBottom: '0.4rem', color: '#e0e0e0' }} {...props} />,
+            strong: ({...props}) => <strong style={{ color: '#fff', fontWeight: 600 }} {...props} />,
+            table: ({...props}) => <table style={{ width: '100%', borderCollapse: 'collapse', margin: '0.8rem 0' }} {...props} />,
+            th: ({...props}) => <th style={{ background: 'rgba(255,255,255,0.04)', padding: '0.4rem', border: `1px solid ${c.border}`, textAlign: 'left', fontSize: '0.8rem' }} {...props} />,
+            td: ({...props}) => <td style={{ padding: '0.4rem', border: `1px solid ${c.border}`, fontSize: '0.8rem' }} {...props} />
+          }}>
+            {report.insight}
+          </ReactMarkdown>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem', flexShrink: 0 }}>
+          <button onClick={() => onDelete(report.id)} style={{ ...s.btn, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}><FaTrash /> Удалить</button>
+          <button onClick={onClose} style={{ ...s.btn, background: c.purple, color: '#fff', flex: 1 }}>Закрыть</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CalendarNav = ({ value, onChange, transactions, c, onDateClick }) => {
   const date = new Date(value);
   const year = date.getFullYear();
@@ -117,7 +167,11 @@ const CalendarNav = ({ value, onChange, transactions, c, onDateClick }) => {
           if (!d) return <div key={i} />;
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
           const isSelected = value === dateKey;
-          const hasData = transactions.some(t => t.date === dateKey);
+          const hasData = transactions.some(t => {
+            if (!t.date) return false;
+            const tDate = typeof t.date === 'string' ? t.date.split('T')[0] : new Date(t.date).toISOString().split('T')[0];
+            return tDate === dateKey;
+          });
           return (
             <div key={i} onClick={() => onDateClick(dateKey)} style={{ height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '6px', fontSize: '0.75rem', position: 'relative', background: isSelected ? c.purple : 'transparent', color: isSelected ? '#fff' : c.text, transition: '0.2s' }}>
               {d} {hasData && !isSelected && (<div style={{ width: '4px', height: '4px', borderRadius: '50%', background: c.purple, position: 'absolute', bottom: '3px' }} />)}
@@ -129,6 +183,8 @@ const CalendarNav = ({ value, onChange, transactions, c, onDateClick }) => {
   );
 };
 
+// --- ОСНОВНОЙ КОМПОНЕНТ СТРАНИЦЫ ---
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [isDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -138,23 +194,34 @@ export default function DashboardPage() {
   const [isPeriodModalOpen, setIsPeriodModalOpen] = useState(false);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [isViewReportOpen, setIsViewReportOpen] = useState(false);
   
   const [showSummary, setShowSummary] = useState(false);
   const [reportPeriod, setReportPeriod] = useState(null);
   const [notes, setNotes] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
+  const [aiSavedReports, setAiSavedReports] = useState([]);
+  const [selectedAiReport, setSelectedAiReport] = useState(null);
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
   
   const [categories, setCategories] = useState({ expense: [], income: [] });
   const [transactions, setTransactions] = useState([]);
 
+  // --- СТЕЙТЫ ДЛЯ ИИ-АНАЛИТИКИ ---
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiReport, setAiReport] = useState<{ insight: string } | null>(null);
+  const [currentPeriodType, setCurrentPeriodType] = useState<'week' | 'month' | 'year' | 'custom'>('month');
+  const [currentDateRange, setCurrentDateRange] = useState<string>('');
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [cats, txs, notesData] = await Promise.all([
+        // СИНХРОНИЗАЦИЯ: вызываем правильный метод getAiReportsHistory()
+        const [cats, txs, notesData, aiHistoryResponse] = await Promise.all([
           FinanceService.getCategories(),
-          FinanceService.getTransactions(), // Загружаем все для "Последних операций"
-          FinanceService.getNotes()
+          FinanceService.getTransactions(),
+          FinanceService.getNotes(),
+          FinanceService.getAiReportsHistory()
         ]);
         
         setCategories({
@@ -163,6 +230,11 @@ export default function DashboardPage() {
         });
         setTransactions(txs);
         setNotes(notesData);
+        
+        // СИНХРОНИЗАЦИЯ: Деструктурируем из { success: true, data: [...] }
+        if (aiHistoryResponse && aiHistoryResponse.success) {
+          setAiSavedReports(aiHistoryResponse.data || []);
+        }
       } catch (err) {
         console.error("Ошибка при загрузке данных:", err);
       }
@@ -217,11 +289,107 @@ export default function DashboardPage() {
     }
   };
 
+  // Удаление архивного отчета ИИ
+  const handleDeletedAiReport = async (id) => {
+    if (!window.confirm("Удалить этот отчет из истории?")) return;
+    try {
+      await FinanceService.deleteAiReport(id);
+      setAiSavedReports(aiSavedReports.filter(r => r.id !== id));
+      setIsViewReportOpen(false);
+      setSelectedAiReport(null);
+    } catch (e) {
+      alert("Ошибка при удалении отчета");
+    }
+  };
+
+  // Хелпер нормализации локальной даты
+  const formatDateString = (date: Date) => {
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split('T')[0];
+  };
+
+  // --- ОБРАБОТЧИК ЗАКЛЮЧЕНИЯ ИИ-АНАЛИТИКИ ---
+  const handleGenerateAiReport = async (period: 'week' | 'month' | 'year' | { start: string; end: string }) => {
+    setAiLoading(true);
+    setAiReport(null);
+
+    let startDate = '';
+    let endDate = formatDateString(new Date());
+    const now = new Date();
+
+    if (period === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      startDate = formatDateString(weekAgo);
+      setCurrentPeriodType('week');
+    } else if (period === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setMonth(now.getMonth() - 1);
+      startDate = formatDateString(monthAgo);
+      setCurrentPeriodType('month');
+    } else if (period === 'year') {
+      const yearAgo = new Date();
+      yearAgo.setFullYear(now.getFullYear() - 1);
+      startDate = formatDateString(yearAgo);
+      setCurrentPeriodType('year');
+    } else {
+      startDate = period.start;
+      endDate = period.end;
+      setCurrentPeriodType('custom');
+    }
+
+    setCurrentDateRange(`${startDate} — ${endDate}`);
+
+    try {
+      const data = await FinanceService.getAiAnalytics(startDate, endDate);
+      setAiReport({ insight: data.report });
+    } catch (err: any) {
+      console.error("Ошибка при генерации отчета ИИ:", err);
+      setAiReport({ 
+        insight: err.response?.data?.message || 'Не удалось сформировать отчет. Добавьте больше операций за выбранный интервал дат или проверьте API токен в профиле.' 
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // --- ХЭНДЛЕР ДЛЯ СОХРАНЕНИЯ ИИ-ОТЧЕТА В ИСТOРИЮ ---
+  const handleSaveAiReport = async (markdownText: string): Promise<boolean> => {
+    try {
+      const response = await FinanceService.saveAiReport({
+        periodType: currentPeriodType,
+        dateRange: currentDateRange,
+        insight: markdownText
+      });
+      
+      // СИНХРОНИЗАЦИЯ: обрабатываем ответ структуры { success: true, data: newReport }
+      if (response && response.success && response.data) {
+        setAiSavedReports([response.data, ...aiSavedReports]);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Ошибка при сохранении отчета в историю:", error);
+      return false;
+    }
+  };
+
+  const handleCloseAiModal = () => {
+    setIsAiReportOpen(false);
+    setAiReport(null);
+  };
+
+  const handleOpenAiReportView = (report) => {
+    setSelectedAiReport(report);
+    setIsViewReportOpen(true);
+  };
+
   const c = {
     bg: isDark ? '#0a0a0a' : '#fafafa', card: isDark ? '#141414' : '#ffffff',
     text: isDark ? '#f5f5f5' : '#111111', muted: isDark ? '#888888' : '#666666',
     border: isDark ? '#2a2a2a' : '#e5e5e5', accent: isDark ? '#ffffff' : '#000000',
-    purple: '#8b5cf6',
+    purple: '#8b5cf6', accentText: isDark ? '#000000' : '#ffffff'
   };
 
   const s = {
@@ -247,12 +415,19 @@ export default function DashboardPage() {
     setShowSummary(true);
   };
 
-  const totalBalance = transactions.reduce((acc, t) => acc + Number(t.amount), 0);
+  const totalBalance = transactions.reduce((acc, t) => {
+    const amt = Number(t.amount);
+    return acc + (t.type === 'expense' ? -Math.abs(amt) : amt);
+  }, 0);
 
-  // Сортировка для истории (сначала новые)
   const sortedTransactions = useMemo(() => {
     return [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions]);
+
+  const translatePeriodLabel = (type) => {
+    const map = { week: 'Неделя', month: 'Месяц', year: 'Год', custom: 'Период' };
+    return map[type] || type;
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: c.bg, color: c.text, fontFamily: 'system-ui, sans-serif' }}>
@@ -273,7 +448,7 @@ export default function DashboardPage() {
 
       <main style={{ maxWidth: '900px', margin: '2rem auto', padding: '0 1rem', display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem', alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* БАЛАНС (можно тоже сделать sticky, если нужно) */}
+          {/* БАЛАНС */}
           <div style={{ ...s.card, position: 'sticky', top: '80px', zIndex: 50 }}>
             <p style={{ color: c.muted, fontSize: '0.8rem', margin: '0 0 0.5rem 0' }}>ОБЩИЙ БАЛАНС</p>
             <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 800, color: totalBalance < 0 ? '#ef4444' : c.text }}>
@@ -328,12 +503,14 @@ export default function DashboardPage() {
                 <Doughnut data={chartData} options={{ maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }} />
              </div>
           </div>
+          
+          {/* БЛОК ЗАМЕТОК */}
           <div style={s.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ fontSize: '0.9rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FaStickyNote size={14} /> Заметки</h3>
               <button onClick={() => { setEditingNote(null); setIsNoteModalOpen(true); }} style={{ background: 'none', border: 'none', color: c.purple, cursor: 'pointer' }}><FaPlus size={12} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '160px', overflowY: 'auto' }}>
               {notes.map(note => (
                 <div key={note.id} onClick={() => { setEditingNote(note); setIsNoteModalOpen(true); }} style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${c.border}`, cursor: 'pointer' }}>
                   <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px' }}>{note.title}</div>
@@ -342,12 +519,55 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
+
+          {/* ИСТОРИЯ ИИ-ОТЧЕТОВ */}
+          <div style={s.card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '0.9rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FaHistory size={13} color={c.purple} /> Аналитика ИИ</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '180px', overflowY: 'auto' }}>
+              {aiSavedReports.length === 0 ? (
+                <p style={{ fontSize: '0.75rem', color: c.muted, margin: 0, textAlign: 'center', padding: '0.5rem 0' }}>Сохраненных отчетов нет</p>
+              ) : (
+                aiSavedReports.map(report => (
+                  <div key={report.id} onClick={() => handleOpenAiReportView(report)} style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.04)', border: `1px solid ${c.purple}22`, cursor: 'pointer', transition: '0.2s' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <FaRobot size={11} color={c.purple} /> {translatePeriodLabel(report.periodType)}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: c.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{report.dateRange}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           <button onClick={() => setIsCatModalOpen(true)} style={{ ...s.btn, background: 'transparent', border: `1px solid ${c.border}`, color: c.text, width: '100%' }}><FaCog /> Настроить категории</button>
         </aside>
       </main>
 
+      {/* МОДАЛЬНЫЕ ОКНА */}
       <TransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={onSubmit} {...{ register, handleSubmit, watch, setValue, categories, s, c }} />
-      <AiReportModal isOpen={isAiReportOpen} onClose={() => setIsAiReportOpen(false)} onGenerate={() => {}} loading={false} report={null} {...{ s, c }} />
+      
+      <AiReportModal 
+        isOpen={isAiReportOpen} 
+        onClose={handleCloseAiModal} 
+        onGenerate={handleGenerateAiReport} 
+        onSaveReport={handleSaveAiReport} 
+        loading={aiLoading} 
+        report={aiReport} 
+        s={s} 
+        c={c} 
+      />
+
+      <ViewAiReportModal 
+        isOpen={isViewReportOpen} 
+        onClose={() => { setIsViewReportOpen(false); setSelectedAiReport(null); }} 
+        report={selectedAiReport} 
+        onDelete={handleDeletedAiReport} 
+        c={c} 
+        s={s} 
+      />
+
       <ReportPeriodModal isOpen={isPeriodModalOpen} onClose={() => setIsPeriodModalOpen(false)} onSelect={handleOpenReport} c={c} s={s} />
       <CategorySettingsModal isOpen={isCatModalOpen} onClose={() => setIsCatModalOpen(false)} categories={categories} setCategories={setCategories} s={s} c={c} />
       <NoteModal isOpen={isNoteModalOpen} onClose={() => { setIsNoteModalOpen(false); setEditingNote(null); }} onSubmit={onNoteSubmit} onDelete={onNoteDelete} editNote={editingNote} c={c} s={s} />
