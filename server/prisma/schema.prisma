@@ -16,8 +16,8 @@ model User {
   transactions Transaction[]
   categories   Category[]
   budgets      Budget[]      
-  notes        Note[]        // Обычные текстовые заметки пользователя
-  aiReports    AiReport[]    // Новая связь: сохраненные отчеты аналитики
+  notes        Note[]       
+  aiReports    AiReport[]  
 }
 
 model Session {
@@ -34,7 +34,7 @@ model Session {
 model Category {
   id           String        @id @default(uuid())
   name         String
-  type         String        // "income" или "expense"
+  type         String        
   icon         String?       
   color        String?       
   userId       String
@@ -69,7 +69,6 @@ model Budget {
   @@index([userId])
 }
 
-// 1. Модель для обычных пользовательских заметок
 model Note {
   id        String   @id @default(uuid())
   title     String
@@ -82,15 +81,14 @@ model Note {
   @@index([userId])
 }
 
-// 2. Новая модель для ИИ-отчетов аналитики
 model AiReport {
   id          String   @id @default(uuid())
-  periodType  String   // "week", "month", "year", "custom" (согласно твоему UI)
-  dateRange   String   // Например, "10.05.2026 - 17.05.2026" для наглядности в списках
+  periodType  String   
+  dateRange   String   
   insight     String   @db.Text // Сам Markdown текст отчета
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
 
-  @@index([userId, createdAt]) // Индекс для быстрого вывода истории отчетов от свежих к старым
+  @@index([userId, createdAt]) 
 }
