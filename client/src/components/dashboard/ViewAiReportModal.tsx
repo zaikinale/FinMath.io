@@ -21,41 +21,63 @@ export const ViewAiReportModal: React.FC<ViewAiReportModalProps> = ({ isOpen, on
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
-      <div style={{ ...s.card, width: '100%', maxWidth: '520px', padding: '1.5rem', border: `1px solid ${c.border}`, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="fixed inset-0 bg-black/60 dark:bg-black/85 backdrop-blur-sm flex items-center justify-center z-[2000] p-4 box-border">
+      
+      {/* Контейнер карточки */}
+      <div className="w-full max-w-[520px] bg-white dark:bg-[#141414] border border-[#e5e5e5] dark:border-[#2a2a2a] p-6 rounded-3xl max-h-[90vh] flex flex-col box-border shadow-2xl">
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div style={{ background: c.purple + '22', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
-              <FaRobot color={c.purple} size={18} />
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4 flex-shrink-0 box-border">
+          <div className="flex items-center gap-2.5 box-border">
+            <div className="bg-violet-500/10 p-2 rounded-xl flex items-center justify-center box-border">
+              <FaRobot className="text-violet-600 dark:text-violet-400 w-4.5 h-4.5" />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Архивный отчет ИИ</h3>
-              <p style={{ margin: 0, fontSize: '0.75rem', color: c.muted }}>{translatePeriod(report.periodType)} ({report.dateRange})</p>
+              <h3 className="m-0 text-sm font-bold text-neutral-900 dark:text-white tracking-tight">Архивный отчет ИИ</h3>
+              <p className="m-0 text-xs text-[#666666] dark:text-[#999999] font-medium mt-0.5">
+                {translatePeriod(report.periodType)} ({report.dateRange})
+              </p>
             </div>
           </div>
-          <FaTimes onClick={onClose} style={{ cursor: 'pointer', color: c.muted }} />
+          <FaTimes 
+            onClick={onClose} 
+            className="cursor-pointer text-[#666666] dark:text-[#999999] hover:opacity-80 transition-opacity w-4 h-4" 
+          />
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '12px', border: `1px solid ${c.border}`, fontSize: '0.85rem', lineHeight: 1.6, color: c.text }}>
-          <ReactMarkdown components={{
-            h3: ({...props}) => <h3 style={{ color: c.purple, fontSize: '1rem', fontWeight: 700, margin: '1.2rem 0 0.5rem 0', borderBottom: `1px solid ${c.border}44`, paddingBottom: '0.3rem' }} {...props} />,
-            h4: ({...props}) => <h4 style={{ color: c.purple, fontSize: '0.95rem', fontWeight: 700, margin: '1.2rem 0 0.5rem 0', borderBottom: `1px solid ${c.border}44`, paddingBottom: '0.3rem' }} {...props} />,
-            ul: ({...props}) => <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0' }} {...props} />,
-            li: ({...props}) => <li style={{ marginBottom: '0.4rem', color: '#e0e0e0' }} {...props} />,
-            strong: ({...props}) => <strong style={{ color: '#fff', fontWeight: 600 }} {...props} />,
-            table: ({...props}) => <table style={{ width: '100%', borderCollapse: 'collapse', margin: '0.8rem 0' }} {...props} />,
-            th: ({...props}) => <th style={{ background: 'rgba(255,255,255,0.04)', padding: '0.4rem', border: `1px solid ${c.border}`, textAlign: 'left', fontSize: '0.8rem' }} {...props} />,
-            td: ({...props}) => <td style={{ padding: '0.4rem', border: `1px solid ${c.border}`, fontSize: '0.8rem' }} {...props} />
-          }}>
+        {/* Контейнер отчета с markdown-стилизацией */}
+        <div className="flex-1 overflow-y-auto bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-[#e5e5e5] dark:border-[#2a2a2a] text-xs font-medium leading-relaxed text-neutral-800 dark:text-[#f5f5f5] box-border
+          [&_h3]:text-violet-600 [&_h3]:dark:text-violet-400 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:border-0 [&_h3]:border-b [&_h3]:border-solid [&_h3]:border-[#e5e5e5] [&_h3]:dark:border-white/10 [&_h3]:pb-1
+          [&_h4]:text-violet-600 [&_h4]:dark:text-violet-400 [&_h4]:text-xs [&_h4]:font-bold [&_h4]:mt-4 [&_h4]:mb-2 [&_h4]:border-0 [&_h4]:border-b [&_h4]:border-solid [&_h4]:border-[#e5e5e5] [&_h4]:dark:border-white/10 [&_h4]:pb-1
+          [&_ul]:pl-5 [&_ul]:my-2 [&_ul]:list-disc
+          [&_li]:mb-1.5 [&_li]:text-neutral-700 [&_li]:dark:text-[#e0e0e0]
+          [&_strong]:text-neutral-950 [&_strong]:dark:text-white [&_strong]:font-bold
+          [&_table]:w-full [&_table]:border-collapse [&_table]:my-3
+          [&_th]:bg-black/[0.04] [&_th]:dark:bg-white/[0.04] [&_th]:p-2 [&_th]:border [&_th]:border-solid [&_th]:border-[#e5e5e5] [&_th]:dark:border-[#2a2a2a] [&_th]:text-left [&_th]:text-[11px]
+          [&_td]:p-2 [&_td]:border [&_td]:border-solid [&_td]:border-[#e5e5e5] [&_td]:dark:border-[#2a2a2a] [&_td]:text-[11px]"
+        >
+          <ReactMarkdown>
             {report.insight}
           </ReactMarkdown>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem', flexShrink: 0 }}>
-          <button onClick={() => onDelete(report.id)} style={{ ...s.btn, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}><FaTrash /> Удалить</button>
-          <button onClick={onClose} style={{ ...s.btn, background: c.purple, color: '#fff', flex: 1 }}>Закрыть</button>
+        {/* Футер-кнопки */}
+        <div className="flex gap-2.5 mt-4 flex-shrink-0 box-border">
+          <button 
+            onClick={() => onDelete(report.id)} 
+            className="px-4 h-11 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-solid border-red-500/20 hover:border-red-500/30 font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors"
+          >
+            <FaTrash className="w-3 h-3" /> Удалить
+          </button>
+          
+          <button 
+            onClick={onClose} 
+            className="flex-1 h-11 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs border-none rounded-xl cursor-pointer flex items-center justify-center transition-colors shadow-sm shadow-violet-500/10"
+          >
+            Закрыть
+          </button>
         </div>
+
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { FaUser, FaEnvelope, FaKey, FaSave, FaCheck, FaArrowLeft, FaEye, FaEyeSlash, FaSignOutAlt } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext'; // Путь к твоему контексту
+import { FaSave, FaCheck, FaArrowLeft, FaEye, FaEyeSlash, FaSignOutAlt } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 import { AuthService } from '../api/auth.service';
 
 const profileSchema = z.object({
@@ -21,37 +21,15 @@ type KeyInput = z.infer<typeof keySchema>;
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, setUser } = useAuth(); // Достаем данные юзера и функцию очистки
+  const { user, setUser } = useAuth();
   
-  const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [showKey, setShowKey] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'profile' | 'key'>('idle');
-
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    media.addEventListener('change', handler);
-    return () => media.removeEventListener('change', handler);
-  }, []);
-
-  const c = {
-    bg: isDark ? '#0a0a0a' : '#fafafa',
-    card: isDark ? '#141414' : '#ffffff',
-    text: isDark ? '#f5f5f5' : '#111111',
-    muted: isDark ? '#999999' : '#666666',
-    border: isDark ? '#2a2a2a' : '#e5e5e5',
-    accent: isDark ? '#ffffff' : '#000000',
-    accentText: isDark ? '#0a0a0a' : '#ffffff',
-    inputBg: isDark ? '#1a1a1a' : '#ffffff',
-    success: '#16a34a',
-    error: '#dc2626',
-    danger: '#ef4444'
-  };
 
   const { register: regProfile, handleSubmit: subProfile, formState: { errors: errProfile, isSubmitting: subProfileLoading } } = useForm<ProfileInput>({
     resolver: zodResolver(profileSchema),
     defaultValues: { 
-      name: user?.name || 'Алексей', // Используем данные из контекста
+      name: user?.name || 'Алексей',
       email: user?.email || '' 
     }
   });
@@ -73,114 +51,131 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     try {
-      await AuthService.logout(); // Запрос на бек для очистки кук
-      setUser(null); // Очищаем стейт
+      await AuthService.logout();
+      setUser(null);
       navigate('/login');
     } catch (e) {
       console.error('Logout failed', e);
-      setUser(null); // Всё равно выходим в случае ошибки
+      setUser(null);
       navigate('/login');
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '0.75rem 0.85rem', background: c.inputBg,
-    border: `1px solid ${c.border}`, borderRadius: '10px', color: c.text,
-    fontSize: '0.95rem', boxSizing: 'border-box', transition: 'all 0.2s',
-    outline: 'none'
-  };
-
-  const btnStyle: React.CSSProperties = {
-    width: '100%', padding: '0.8rem', background: c.accent, color: c.accentText,
-    border: 'none', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 600,
-    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
-    transition: 'opacity 0.2s'
-  };
-
   return (
-    <div style={{ minHeight: '100vh', background: c.bg, color: c.text, fontFamily: 'system-ui, -apple-system, sans-serif', padding: '2rem 1rem', transition: 'background 0.3s, color 0.3s', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div className="min-h-screen w-full bg-neutral-50 dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 font-sans px-4 py-8 flex flex-col items-center justify-start transition-colors duration-300">
       
-      <div style={{ width: '100%', maxWidth: '460px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: c.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', padding: 0 }}>
-          <FaArrowLeft style={{ width: '14px', height: '14px' }} /> Назад
+      {/* Верхний бар */}
+      <div className="w-full max-w-md flex justify-between items-center mb-6">
+        <button 
+          type="button"
+          onClick={() => navigate(-1)} 
+          className="bg-transparent border-none text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer flex items-center gap-2 text-sm py-1 transition-colors"
+        >
+          <FaArrowLeft className="w-3.5 h-3.5" /> Назад
         </button>
         
-        {/* Кнопка выхода */}
-        <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: c.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', fontWeight: 500, padding: '0.4rem 0.8rem', borderRadius: '8px', transition: 'background 0.2s' }}>
+        <button 
+          type="button"
+          onClick={handleLogout} 
+          className="bg-transparent border-none text-red-500 hover:text-red-600 hover:bg-red-500/10 cursor-pointer flex items-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-xl transition-all"
+        >
           <FaSignOutAlt /> Выйти
         </button>
       </div>
 
-      <div style={{ width: '100%', maxWidth: '460px', background: c.card, border: `1px solid ${c.border}`, borderRadius: '20px', padding: '2.5rem', boxShadow: '0 10px 40px rgba(0,0,0,0.02)' }}>
+      {/* Карточка настроек */}
+      <div className="w-full max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors duration-300">
         
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em', margin: 0 }}>Настройки</h1>
-          <p style={{ color: c.muted, fontSize: '0.95rem', margin: '0.5rem 0 0' }}>Персонализация вашего аккаунта</p>
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight m-0">Настройки</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-2">Персонализация вашего аккаунта</p>
         </div>
 
-        {/* Профиль */}
-        <form onSubmit={subProfile(onProfileSave)} style={{ marginBottom: '2rem' }}>
-          <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: c.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        {/* Форма: Личные данные */}
+        <form onSubmit={subProfile(onProfileSave)} className="mb-6">
+          <h3 className="text-xs font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-4 flex items-center gap-2 m-0">
             Личные данные
           </h3>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.45rem', color: c.muted }}>Имя</label>
-              <input type="text" {...regProfile('name')} style={inputStyle} placeholder="Ваше имя" />
-              {errProfile.name && <p style={{ color: c.error, fontSize: '0.75rem', marginTop: '0.3rem' }}>{errProfile.name.message}</p>}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col">
+              <label className="text-xs font-semibold mb-1.5 text-neutral-500 dark:text-neutral-400">Имя</label>
+              <input 
+                type="text" 
+                {...regProfile('name')} 
+                className="w-full px-4 py-3 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-950 dark:text-neutral-50 text-sm outline-none focus:border-neutral-400 dark:focus:border-neutral-500 transition-all block box-border" 
+                placeholder="Ваше имя" 
+              />
+              {errProfile.name && <p className="text-red-500 text-xs mt-1.5 m-0">{errProfile.name.message}</p>}
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.45rem', color: c.muted }}>Email</label>
-              <input type="email" {...regProfile('email')} style={inputStyle} placeholder="you@example.com" />
-              {errProfile.email && <p style={{ color: c.error, fontSize: '0.75rem', marginTop: '0.3rem' }}>{errProfile.email.message}</p>}
+            <div className="flex flex-col">
+              <label className="text-xs font-semibold mb-1.5 text-neutral-500 dark:text-neutral-400">Email</label>
+              <input 
+                type="email" 
+                {...regProfile('email')} 
+                className="w-full px-4 py-3 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-950 dark:text-neutral-50 text-sm outline-none focus:border-neutral-400 dark:focus:border-neutral-500 transition-all block box-border" 
+                placeholder="you@example.com" 
+              />
+              {errProfile.email && <p className="text-red-500 text-xs mt-1.5 m-0">{errProfile.email.message}</p>}
             </div>
 
-            <button type="submit" disabled={subProfileLoading} style={{ ...btnStyle, opacity: subProfileLoading ? 0.6 : 1 }}>
-              {subProfileLoading ? 'Сохранение...' : <><FaSave style={{ width: '13px', height: '13px' }} /> Обновить профиль</>}
+            <button 
+              type="submit" 
+              disabled={subProfileLoading} 
+              className="w-full py-3 mt-2 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 border-none rounded-xl text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+            >
+              {subProfileLoading ? 'Сохранение...' : <><FaSave className="w-3.5 h-3.5" /> Обновить профиль</>}
             </button>
           </div>
         </form>
 
-        <div style={{ height: '1px', background: c.border, margin: '2rem 0' }} />
+        <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-6" />
 
-        {/* API Ключ */}
+        {/* Форма: AI Ключ */}
         <form onSubmit={subKey(onKeySave)}>
-          <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: c.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h3 className="text-xs font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-4 flex items-center gap-2 m-0">
             AI Интеграция
           </h3>
 
-          <div style={{ position: 'relative', marginBottom: '1rem' }}>
-            <input 
-              type={showKey ? 'text' : 'password'} 
-              {...regKey('apiKey')} 
-              style={{ ...inputStyle, paddingRight: '3rem' }} 
-              placeholder="sk-..." 
-            />
-            <button 
-              type="button" 
-              onClick={() => setShowKey(!showKey)}
-              style={{ position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: c.muted, cursor: 'pointer' }}
-            >
-              {showKey ? <FaEyeSlash /> : <FaEye />}
-            </button>
-            {errKey.apiKey && <p style={{ color: c.error, fontSize: '0.75rem', marginTop: '0.3rem' }}>{errKey.apiKey.message}</p>}
+          <div className="relative mb-4">
+            <label className="block text-xs font-semibold mb-1.5 text-neutral-500 dark:text-neutral-400">API-ключ</label>
+            <div className="relative">
+              <input 
+                type={showKey ? 'text' : 'password'} 
+                {...regKey('apiKey')} 
+                className="w-full pl-4 pr-12 py-3 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-950 dark:text-neutral-50 text-sm outline-none focus:border-neutral-400 dark:focus:border-neutral-500 transition-all block box-border" 
+                placeholder="sk-..." 
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowKey(!showKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 cursor-pointer p-1 transition-colors flex items-center"
+              >
+                {showKey ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+              </button>
+            </div>
+            {errKey.apiKey && <p className="text-red-500 text-xs mt-1.5 m-0">{errKey.apiKey.message}</p>}
           </div>
 
-          <button type="submit" disabled={subKeyLoading} style={{ ...btnStyle, opacity: subKeyLoading ? 0.6 : 1 }}>
+          <button 
+            type="submit" 
+            disabled={subKeyLoading} 
+            className="w-full py-3 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 border-none rounded-xl text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+          >
             {subKeyLoading ? 'Проверка...' : 'Сохранить API-ключ'}
           </button>
         </form>
 
+        {/* Статус сохранения */}
         {saveStatus !== 'idle' && (
-          <div style={{ marginTop: '1.5rem', padding: '0.75rem', background: `${c.success}10`, border: `1px solid ${c.success}30`, borderRadius: '12px', color: c.success, fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <FaCheck /> {saveStatus === 'profile' ? 'Профиль обновлен' : 'Ключ сохранен'}
+          <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-600 dark:text-green-400 text-xs font-semibold flex items-center justify-center gap-2 animate-fade-in">
+            <FaCheck /> {saveStatus === 'profile' ? 'Профиль успешно обновлен' : 'API-ключ успешно сохранен'}
           </div>
         )}
       </div>
 
-      <p style={{ marginTop: '2.5rem', color: c.muted, fontSize: '0.8rem', textAlign: 'center', opacity: 0.7 }}>
+      <p className="mt-8 text-neutral-400 dark:text-neutral-500 text-xs text-center opacity-80">
         Все изменения вступают в силу мгновенно.
       </p>
     </div>

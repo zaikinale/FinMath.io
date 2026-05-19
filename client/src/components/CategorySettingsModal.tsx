@@ -27,10 +27,8 @@ export const CategorySettingsModal = ({ isOpen, onClose, categories, setCategori
     const cat = currentCats.find(item => item.id === selectedCatId);
     
     if (cat?.budget && typeof cat.budget === 'object') {
-      // Если бэкенд прислал объект лимита { id, amount, ... }, берем amount
       setTempLimit(cat.budget.amount?.toString() || "");
     } else {
-      // Если budget равен null или undefined
       setTempLimit("");
     }
   }, [selectedCatId, currentCats]);
@@ -49,7 +47,6 @@ export const CategorySettingsModal = ({ isOpen, onClose, categories, setCategori
         type: activeTab
       });
 
-      // Гарантируем наличие поля budget, чтобы избежать багов при рендере
       const safeCreated = { ...created, budget: null };
 
       setCategories({
@@ -85,13 +82,12 @@ export const CategorySettingsModal = ({ isOpen, onClose, categories, setCategori
     }
   };
 
-  // --- ЭНДПОИНТ: СОХРАНЕНИЕ ЛИМИТА (Исправлен ключ на budgetAmount) ---
+  // --- ЭНДПОИНТ: СОХРАНЕНИЕ ЛИМИТА ---
   const handleSaveLimit = async () => {
     if (activeTab !== 'expense' || !selectedCatId || loading) return;
 
     setLoading(true);
     try {
-      // Шлем ИМЕННО budgetAmount, чтобы пробить валидацию в Prisma сервисе бэкенда
       const updated = await FinanceService.updateCategory(selectedCatId, {
         budgetAmount: tempLimit ? Number(tempLimit) : null
       });
@@ -112,92 +108,131 @@ export const CategorySettingsModal = ({ isOpen, onClose, categories, setCategori
   const selectedCategory = currentCats.find(cat => cat.id === selectedCatId);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
-      <div style={{ ...s.card, width: '100%', maxWidth: '700px', display: 'flex', flexDirection: 'column', background: '#141414', border: `1px solid ${c.border}`, padding: 0, overflow: 'hidden', borderRadius: '24px' }}>
+    <div className="fixed inset-0 bg-black/60 dark:bg-black/85 backdrop-blur-[10px] flex items-center justify-center z-[2000] p-4 box-border">
+      
+      {/* Главный контейнер карточки */}
+      <div className="w-full max-w-[700px] flex flex-col bg-white dark:bg-[#141414] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-3xl overflow-hidden box-border shadow-2xl">
         
         {/* Header Tabs */}
-        <div style={{ padding: '1.2rem 1.5rem', borderBottom: `1px solid ${c.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#141414' }}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-             <button onClick={() => setActiveTab('expense')} style={{ background: activeTab === 'expense' ? c.purple : 'transparent', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', transition: '0.3s' }}>Расходы</button>
-             <button onClick={() => setActiveTab('income')} style={{ background: activeTab === 'income' ? c.purple : 'transparent', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', transition: '0.3s' }}>Доходы</button>
+        <div className="px-6 py-4 border-0 border-b border-solid border-[#e5e5e5] dark:border-[#2a2a2a] flex justify-between items-center bg-white dark:bg-[#141414] box-border">
+          <div className="flex gap-2 items-center box-border">
+             <button 
+               onClick={() => setActiveTab('expense')} 
+               className={`px-4 py-2 rounded-xl text-xs font-bold border-none cursor-pointer transition-all ${
+                 activeTab === 'expense' 
+                   ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/10' 
+                   : 'bg-transparent text-[#666666] dark:text-[#999999] hover:bg-black/5 dark:hover:bg-white/5'
+               }`}
+             >
+               Расходы
+             </button>
+             <button 
+               onClick={() => setActiveTab('income')} 
+               className={`px-4 py-2 rounded-xl text-xs font-bold border-none cursor-pointer transition-all ${
+                 activeTab === 'income' 
+                   ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/10' 
+                   : 'bg-transparent text-[#666666] dark:text-[#999999] hover:bg-black/5 dark:hover:bg-white/5'
+               }`}
+             >
+               Доходы
+             </button>
           </div>
-          <FaTimes onClick={onClose} style={{ cursor: 'pointer', color: c.muted }} />
+          <FaTimes 
+            onClick={onClose} 
+            className="cursor-pointer text-[#666666] dark:text-[#999999] hover:opacity-80 transition-opacity w-4 h-4" 
+          />
         </div>
 
-        <div style={{ display: 'flex', height: '450px' }}>
+        {/* Тело модалки с разбивкой на две колонки */}
+        <div className="flex h-[450px] w-full box-border">
           
-          {/* Sidebar: Список категорий */}
-          <div style={{ width: '40%', borderRight: `1px solid ${c.border}`, display: 'flex', flexDirection: 'column', background: '#0d0d0d' }}>
+          {/* Левый сайдбар: Список категорий */}
+          <div className="w-[40%] border-0 border-r border-solid border-[#e5e5e5] dark:border-[#2a2a2a] flex flex-col bg-neutral-50 dark:bg-[#0d0d0d] box-border">
             
-            <form onSubmit={handleAddCategory} style={{ padding: '1rem', borderBottom: `1px solid ${c.border}`, display: 'flex', gap: '0.5rem' }}>
+            {/* Форма добавления */}
+            <form onSubmit={handleAddCategory} className="p-4 border-0 border-b border-solid border-[#e5e5e5] dark:border-[#2a2a2a] flex gap-2 box-border">
               <input 
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 placeholder="Название..."
                 disabled={loading}
-                style={{ flex: 1, background: '#1a1a1a', border: `1px solid ${c.border}`, borderRadius: '8px', color: '#fff', fontSize: '0.8rem', padding: '0.5rem' }}
+                className="flex-1 px-3 py-2 bg-white dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-neutral-900 dark:text-white text-xs box-border outline-none transition-colors focus:border-neutral-400 dark:focus:border-neutral-600 disabled:opacity-60"
               />
-              <button type="submit" disabled={loading} style={{ ...s.btn, background: c.purple, color: '#fff', padding: '0.5rem', width: '40px' }}><FaPlus /></button>
+              <button 
+                type="submit" 
+                disabled={loading} 
+                className="w-9 h-9 bg-violet-600 hover:bg-violet-500 text-white rounded-xl flex items-center justify-center border-none cursor-pointer transition-colors disabled:opacity-60 flex-shrink-0"
+              >
+                <FaPlus className="w-3 h-3" />
+              </button>
             </form>
 
-            <div style={{ overflowY: 'auto', flex: 1 }}>
+            {/* Элементы списка */}
+            <div className="overflow-y-auto flex-1 box-border">
               {currentCats.map((cat) => (
                 <div 
                   key={cat.id} 
                   onClick={() => setSelectedCatId(cat.id)} 
-                  style={{ 
-                    padding: '1rem', 
-                    cursor: 'pointer', 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    background: selectedCatId === cat.id ? c.purple + '22' : 'transparent', 
-                    borderLeft: `3px solid ${selectedCatId === cat.id ? c.purple : 'transparent'}`,
-                    transition: '0.2s'
-                  }}
+                  className={`px-5 py-4 cursor-pointer flex justify-between items-center transition-all border-0 border-l-[3px] border-solid ${
+                    selectedCatId === cat.id 
+                      ? 'bg-violet-500/10 border-violet-500' 
+                      : 'bg-transparent border-transparent hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
+                  }`}
                 >
-                  <span style={{ color: '#fff', fontSize: '0.9rem' }}>{cat.name}</span>
+                  <span className="text-neutral-900 dark:text-white text-sm font-semibold truncate pr-2 box-border">
+                    {cat.name}
+                  </span>
                   <FaTrashAlt 
                     onClick={(e) => { e.stopPropagation(); handleDelete(cat.id); }} 
-                    style={{ color: '#ff4444', fontSize: '0.75rem', opacity: 0.6, cursor: 'pointer' }} 
+                    className="text-red-500 w-3 h-3 opacity-60 hover:opacity-100 cursor-pointer transition-opacity flex-shrink-0" 
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Main Content: Настройки выбранной категории */}
-          <div style={{ width: '60%', padding: '2rem', background: '#141414', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center' }}>
+          {/* Правая часть: Настройки выбранной категории */}
+          <div className="w-[60%] p-8 bg-white dark:bg-[#141414] flex flex-col justify-center items-center text-center box-border">
             {selectedCategory ? (
               activeTab === 'expense' ? (
-                <div style={{ width: '100%', maxWidth: '250px', margin: '0 auto' }}>
-                  <h2 style={{ color: '#fff', marginBottom: '1.5rem', fontSize: '1.5rem' }}>{selectedCategory.name}</h2>
-                  <div style={{ marginBottom: '2rem' }}>
-                    <label style={{ color: c.muted, fontSize: '0.75rem', display: 'block', marginBottom: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Месячный лимит (₽)</label>
+                <div className="w-full max-w-[250px] mx-auto box-border">
+                  <h2 className="text-neutral-900 dark:text-white m-0 mb-6 text-xl font-black truncate">
+                    {selectedCategory.name}
+                  </h2>
+                  <div className="mb-8 box-border">
+                    <label className="text-[#666666] dark:text-[#999999] text-[10px] font-bold block mb-3 uppercase tracking-wider">
+                      Месячный лимит (₽)
+                    </label>
                     <input 
                       type="number" 
                       value={tempLimit} 
                       onChange={(e) => setTempLimit(e.target.value)} 
-                      style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: `2px solid ${c.border}`, color: '#fff', textAlign: 'center', fontSize: '1.8rem', outline: 'none', padding: '0.5rem 0' }}
+                      className="w-full bg-transparent border-none border-b-2 border-solid border-[#e5e5e5] dark:border-[#2a2a2a] text-neutral-900 dark:text-white text-center text-3xl font-black outline-none pb-2 transition-colors focus:border-violet-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       placeholder="∞"
                     />
                   </div>
                   <button 
                     onClick={handleSaveLimit} 
                     disabled={loading}
-                    style={{ ...s.btn, background: c.purple, color: '#fff', width: '100%', justifyContent: 'center', padding: '0.8rem' }}
+                    className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 border-none cursor-pointer transition-colors shadow-sm shadow-violet-500/10 disabled:opacity-60"
                   >
-                    <FaSave style={{ marginRight: '8px' }} /> Сохранить
+                    <FaSave className="w-3.5 h-3.5" /> Сохранить
                   </button>
                 </div>
               ) : (
-                <div>
-                  <h2 style={{ color: '#fff', fontSize: '1.5rem' }}>{selectedCategory.name}</h2>
-                  <p style={{ color: c.muted, marginTop: '1rem' }}>Для категорий доходов лимиты не предусмотрены.</p>
+                <div className="box-border">
+                  <h2 className="text-neutral-900 dark:text-white m-0 text-xl font-black truncate">
+                    {selectedCategory.name}
+                  </h2>
+                  <p className="text-[#666666] dark:text-[#999999] text-xs font-semibold mt-3 m-0 max-w-[280px]">
+                    Для категорий доходов лимиты не предусмотрены.
+                  </p>
                 </div>
               )
             ) : (
-              <span style={{ color: c.muted }}>Выберите категорию из списка слева</span>
+              <span className="text-[#666666] dark:text-[#999999] text-xs font-medium">
+                Выберите категорию из списка слева
+              </span>
             )}
           </div>
         </div>

@@ -23,101 +23,74 @@ export const TransactionModal = ({
     : (categories[currentType] || []);
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      inset: 0, 
-      background: 'rgba(0,0,0,0.6)', 
-      backdropFilter: 'blur(4px)', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      zIndex: 1000, 
-      padding: '1rem' 
-    }}>
-      <div style={{ ...s.card, width: '100%', maxWidth: '440px', background: s.isDark ? '#141414' : '#fff' }}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-[4px] flex items-center justify-center z-[1000] p-4 box-border">
+      
+      {/* Карточка модального окна */}
+      <div className="w-full max-w-[440px] bg-white dark:bg-[#141414] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-2xl p-6 box-border shadow-xl">
         
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ margin: 0, color: s.isDark ? '#fff' : '#000' }}>Новая запись</h3>
-          <FaTimes onClick={onClose} style={{ cursor: 'pointer', color: c.muted }} />
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold m-0 text-black dark:text-white tracking-tight">Новая запись</h3>
+          <FaTimes 
+            onClick={onClose} 
+            className="cursor-pointer text-[#666666] dark:text-[#999999] hover:opacity-80 transition-opacity w-4 h-4" 
+          />
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 box-border">
           
           {/* Switcher: Expense / Income */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '0.5rem', 
-            background: s.isDark ? '#1a1a1a' : '#f0f0f0', 
-            padding: '4px', 
-            borderRadius: '12px' 
-          }}>
+          <div className="flex gap-1 bg-[#f0f0f0] dark:bg-[#1a1a1a] p-1 rounded-xl box-border">
             <button 
               type="button" 
               onClick={() => setValue('type', 'expense')} 
-              style={{ 
-                ...s.btn, 
-                flex: 1, 
-                justifyContent: 'center', 
-                background: currentType === 'expense' ? (s.isDark ? '#2a2a2a' : '#fff') : 'transparent',
-                color: currentType === 'expense' ? c.purple : c.muted,
-                boxShadow: currentType === 'expense' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none'
-              }}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold border-none cursor-pointer flex items-center justify-center transition-all ${
+                currentType === 'expense' 
+                  ? 'bg-white dark:bg-[#2a2a2a] text-violet-500 shadow-sm' 
+                  : 'bg-transparent text-[#666666] dark:text-[#999999] hover:text-[#111111] dark:hover:text-[#f5f5f5]'
+              }`}
             >
               Расход
             </button>
             <button 
               type="button" 
               onClick={() => setValue('type', 'income')} 
-              style={{ 
-                ...s.btn, 
-                flex: 1, 
-                justifyContent: 'center', 
-                background: currentType === 'income' ? (s.isDark ? '#2a2a2a' : '#fff') : 'transparent',
-                color: currentType === 'income' ? c.purple : c.muted,
-                boxShadow: currentType === 'income' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none'
-              }}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold border-none cursor-pointer flex items-center justify-center transition-all ${
+                currentType === 'income' 
+                  ? 'bg-white dark:bg-[#2a2a2a] text-violet-500 shadow-sm' 
+                  : 'bg-transparent text-[#666666] dark:text-[#999999] hover:text-[#111111] dark:hover:text-[#f5f5f5]'
+              }`}
             >
               Доход
             </button>
           </div>
           
           {/* Amount Input */}
-          <div style={{ position: 'relative' }}>
+          <div className="relative box-border">
             <input 
               type="number" 
               step="any"
               {...register('amount', { required: true })} 
-              style={{ 
-                ...s.input, 
-                fontSize: '1.8rem', 
-                fontWeight: 700, 
-                textAlign: 'center',
-                padding: '1rem',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: `2px solid ${c.border}`
-              }} 
+              className="w-full text-3xl font-black text-center p-3 bg-transparent border-none border-b-2 border-[#e5e5e5] dark:border-[#2a2a2a] text-[#111111] dark:text-[#f5f5f5] box-border outline-none transition-colors focus:border-violet-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0" 
             />
-            <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem', color: c.muted }}>₽</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-[#666666] dark:text-[#999999] font-bold">₽</span>
           </div>
           
           {/* Category Select */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <label style={{ fontSize: '0.75rem', color: c.muted, marginLeft: '4px' }}>Категория</label>
+          <div className="flex flex-col gap-1.5 box-border">
+            <label className="text-xs font-semibold text-[#666666] dark:text-[#999999] ml-1">Категория</label>
             <select 
               {...register('categoryId', { required: true })} 
-              style={{ ...s.input, cursor: 'pointer' }}
+              className="w-full px-3 py-2.5 bg-white dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-[#111111] dark:text-[#f5f5f5] text-sm box-border outline-none cursor-pointer transition-colors focus:border-neutral-400 dark:focus:border-neutral-600"
             >
-              <option value="">Выберите категорию...</option>
+              <option value="" className="bg-white dark:bg-[#141414]">Выберите категорию...</option>
               {categoriesList.map(cat => {
-                // Обработка и объектов, и строк (для обратной совместимости)
                 const id = typeof cat === 'object' ? cat.id : cat;
                 const name = typeof cat === 'object' ? cat.name : cat;
                 
                 return (
-                  <option key={id} value={id}>
+                  <option key={id} value={id} className="bg-white dark:bg-[#141414]">
                     {name}
                   </option>
                 );
@@ -126,30 +99,30 @@ export const TransactionModal = ({
           </div>
 
           {/* Date & Description */}
-          <div style={{ display: 'flex', gap: '0.8rem' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: '0.75rem', color: c.muted, display: 'block', marginBottom: '0.4rem' }}>Дата</label>
-              <input type="date" {...register('date')} style={s.input} />
+          <div className="flex gap-4 box-border">
+            <div className="flex-1 min-w-0 box-border">
+              <label className="text-xs font-semibold text-[#666666] dark:text-[#999999] block mb-1.5">Дата</label>
+              <input 
+                type="date" 
+                {...register('date')} 
+                className="w-full px-3 py-2.5 bg-white dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-[#111111] dark:text-[#f5f5f5] text-sm box-border outline-none transition-colors focus:border-neutral-400 dark:focus:border-neutral-600" 
+              />
             </div>
-            <div style={{ flex: 1.5 }}>
-              <label style={{ fontSize: '0.75rem', color: c.muted, display: 'block', marginBottom: '0.4rem' }}>Комментарий</label>
-              <input type="text" {...register('desc')} style={s.input} placeholder="На что потратили?" />
+            <div className="flex-[1.5] min-w-0 box-border">
+              <label className="text-xs font-semibold text-[#666666] dark:text-[#999999] block mb-1.5">Комментарий</label>
+              <input 
+                type="text" 
+                {...register('desc')} 
+                className="w-full px-3 py-2.5 bg-white dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-[#111111] dark:text-[#f5f5f5] text-sm box-border outline-none transition-colors focus:border-neutral-400 dark:focus:border-neutral-600" 
+                placeholder="На что потратили?" 
+              />
             </div>
           </div>
           
           {/* Submit Button */}
           <button 
             type="submit" 
-            style={{ 
-              ...s.btn, 
-              background: c.purple, 
-              color: '#fff', 
-              justifyContent: 'center', 
-              fontWeight: 700, 
-              padding: '1rem',
-              marginTop: '0.5rem',
-              fontSize: '1rem'
-            }}
+            className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white border-none rounded-xl text-sm font-bold transition-colors cursor-pointer mt-2 shadow-sm shadow-violet-500/10"
           >
             Сохранить транзакцию
           </button>

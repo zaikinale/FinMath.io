@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FaEnvelope, FaLock, FaArrowLeft } from 'react-icons/fa';
-import { useState, useEffect } from 'react';
-import { AuthService } from '../../api/auth.service'; // Проверь путь
-import { useAuth } from '../../context/AuthContext';   // Достаем наш хук
+import { useState } from 'react';
+import { AuthService } from '../../api/auth.service'; 
+import { useAuth } from '../../context/AuthContext';   
 import axios from 'axios';
 
 const loginSchema = z.object({
@@ -17,16 +17,8 @@ type LoginInput = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { setUser } = useAuth(); // Функция для обновления глобального состояния
+  const { setUser } = useAuth(); 
   const [serverError, setServerError] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    media.addEventListener('change', handler);
-    return () => media.removeEventListener('change', handler);
-  }, []);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema)
@@ -35,14 +27,8 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginInput) => {
     setServerError(null);
     try {
-      // 1. Делаем реальный запрос к бекенду
       const response = await AuthService.login(data.email, data.password);
-      
-      // 2. Обновляем состояние пользователя в AuthContext
-      // В response.user должны быть данные, которые вернул бекенд
       setUser(response.user); 
-      
-      // 3. Только теперь переходим
       navigate('/dashboard');
     } catch (err: any) {
       if (axios.isAxiosError(err)) {
@@ -53,79 +39,93 @@ export default function LoginPage() {
     }
   };
 
-  const c = {
-    bg: isDark ? '#0a0a0a' : '#fafafa',
-    card: isDark ? '#141414' : '#ffffff',
-    text: isDark ? '#f5f5f5' : '#111111',
-    muted: isDark ? '#999999' : '#666666',
-    border: isDark ? '#2a2a2a' : '#e5e5e5',
-    accent: isDark ? '#ffffff' : '#000000',
-    accentText: isDark ? '#0a0a0a' : '#ffffff',
-    inputBg: isDark ? '#1a1a1a' : '#ffffff',
-    error: '#dc2626'
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '0.7rem 0.85rem 0.7rem 2.3rem', background: c.inputBg,
-    border: `1px solid ${c.border}`, borderRadius: '10px', color: c.text,
-    fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s',
-    outline: 'none'
-  };
-
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem', background: c.bg, color: c.text, fontFamily: 'system-ui, -apple-system, sans-serif', transition: 'background 0.3s, color 0.3s' }}>
-      <Link to="/" style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: c.muted, textDecoration: 'none', fontSize: '0.875rem' }}>
-        <FaArrowLeft style={{ width: '14px', height: '14px' }} /> На главную
+    <div className="min-h-screen w-full flex items-center justify-center px-4 py-8 bg-[#fafafa] dark:bg-[#0a0a0a] text-[#111111] dark:text-[#f5f5f5] font-sans transition-colors duration-300 relative box-border">
+      
+      {/* Кнопка назад */}
+      <Link 
+        to="/" 
+        className="absolute top-6 left-6 inline-flex items-center gap-1.5 text-[#666666] dark:text-[#999999] hover:opacity-80 text-sm font-medium no-underline transition-opacity"
+      >
+        <FaArrowLeft className="w-3.5 h-3.5" /> На главную
       </Link>
 
-      <div style={{ width: '100%', maxWidth: '400px', background: c.card, border: `1px solid ${c.border}`, borderRadius: '14px', padding: '2rem', boxShadow: '0 8px 32px rgba(0,0,0,0.04)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
-          <h1 style={{ fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.35rem' }}>С возвращением</h1>
-          <p style={{ color: c.muted, fontSize: '0.9rem' }}>Войдите в свой аккаунт</p>
+      {/* Форма логина */}
+      <div className="w-full max-w-[400px] bg-white dark:bg-[#141414] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-2xl p-8 box-border shadow-md">
+        
+        <div className="text-center mb-7">
+          <h1 className="text-2xl font-bold tracking-tight m-0 mb-1.5">С возвращением</h1>
+          <p className="text-[#666666] dark:text-[#999999] text-sm m-0">Войдите в свой аккаунт</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          {/* Отображение ошибки сервера */}
+          
+          {/* Ошибка сервера */}
           {serverError && (
-            <div style={{ padding: '0.7rem', background: `${c.error}15`, border: `1px solid ${c.error}30`, color: c.error, borderRadius: '8px', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center' }}>
+            <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-500 p-3 rounded-xl text-sm mb-4 text-center font-medium">
               {serverError}
             </div>
           )}
 
-          <div style={{ marginBottom: '1.1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.4rem', color: c.muted }}>Email</label>
-            <div style={{ position: 'relative' }}>
-              <FaEnvelope style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: c.muted, width: '15px', height: '15px', pointerEvents: 'none' }} />
-              <input type="email" {...register('email')} style={inputStyle} placeholder="you@example.com" />
+          {/* Поле: Email */}
+          <div className="mb-4">
+            <label className="block text-xs font-semibold mb-1.5 text-[#666666] dark:text-[#999999]">Email</label>
+            <div className="relative">
+              <FaEnvelope className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#666666] dark:text-[#999999] w-3.5 h-3.5 pointer-events-none" />
+              <input 
+                type="email" 
+                {...register('email')} 
+                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-[#111111] dark:text-[#f5f5f5] text-sm box-border outline-none transition-all focus:border-neutral-400 dark:focus:border-neutral-600"
+                placeholder="you@example.com" 
+              />
             </div>
-            {errors.email && <p style={{ color: c.error, fontSize: '0.78rem', marginTop: '0.3rem' }}>{errors.email.message}</p>}
+            {errors.email && <p className="text-red-600 dark:text-red-500 text-xs mt-1.5 m-0 font-medium">{errors.email.message}</p>}
           </div>
 
-          <div style={{ marginBottom: '1.1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.4rem', color: c.muted }}>Пароль</label>
-            <div style={{ position: 'relative' }}>
-              <FaLock style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: c.muted, width: '15px', height: '15px', pointerEvents: 'none' }} />
-              <input type="password" {...register('password')} style={inputStyle} placeholder="••••••••" />
+          {/* Поле: Пароль */}
+          <div className="mb-3">
+            <label className="block text-xs font-semibold mb-1.5 text-[#666666] dark:text-[#999999]">Пароль</label>
+            <div className="relative">
+              <FaLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#666666] dark:text-[#999999] w-3.5 h-3.5 pointer-events-none" />
+              <input 
+                type="password" 
+                {...register('password')} 
+                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-[#111111] dark:text-[#f5f5f5] text-sm box-border outline-none transition-all focus:border-neutral-400 dark:focus:border-neutral-600"
+                placeholder="••••••••" 
+              />
             </div>
-            {errors.password && <p style={{ color: c.error, fontSize: '0.78rem', marginTop: '0.3rem' }}>{errors.password.message}</p>}
+            {errors.password && <p className="text-red-600 dark:text-red-500 text-xs mt-1.5 m-0 font-medium">{errors.password.message}</p>}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '0.5rem 0 1.2rem' }}>
-            <button type="button" style={{ background: 'none', border: 'none', color: c.muted, fontSize: '0.82rem', cursor: 'pointer', padding: 0 }}>Забыли пароль?</button>
+          {/* Восстановление пароля */}
+          <div className="flex justify-end mb-5">
+            <button 
+              type="button" 
+              className="bg-transparent border-none text-[#666666] dark:text-[#999999] hover:text-[#111111] dark:hover:text-[#f5f5f5] text-xs font-medium cursor-pointer p-0 transition-colors"
+            >
+              Забыли пароль?
+            </button>
           </div>
 
-          <button type="submit" disabled={isSubmitting} style={{ width: '100%', padding: '0.8rem', background: c.accent, color: c.accentText, border: 'none', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 600, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1, transition: 'all 0.2s' }}>
+          {/* Кнопка Войти */}
+          <button 
+            type="submit" 
+            disabled={isSubmitting} 
+            className="w-full py-3 bg-black dark:bg-white text-white dark:text-black border-none rounded-xl text-sm font-bold transition-all box-border cursor-pointer disabled:not-allowed disabled:opacity-60 hover:opacity-90"
+          >
             {isSubmitting ? 'Вход...' : 'Войти'}
           </button>
 
-          <div style={{ position: 'relative', margin: '1.3rem 0', textAlign: 'center' }}>
-            <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: c.border }} />
-            <span style={{ position: 'relative', background: c.card, padding: '0 0.6rem', color: c.muted, fontSize: '0.82rem' }}>или</span>
+          {/* Разделитель */}
+          <div className="relative my-5 text-center">
+            <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-[#e5e5e5] dark:bg-[#2a2a2a]" />
+            <span className="relative bg-white dark:bg-[#141414] px-2.5 text-xs text-[#666666] dark:text-[#999999]">или</span>
           </div>
 
-          <p style={{ textAlign: 'center', color: c.muted, fontSize: '0.88rem' }}>
+          {/* Ссылка на регистрацию */}
+          <p className="text-center text-[#666666] dark:text-[#999999] text-sm m-0">
             Нет аккаунта?{' '}
-            <Link to="/register" style={{ color: c.text, textDecoration: 'none', fontWeight: 500 }}>Зарегистрироваться</Link>
+            <Link to="/register" className="text-[#111111] dark:text-[#f5f5f5] no-underline font-semibold hover:underline">Зарегистрироваться</Link>
           </p>
         </form>
       </div>

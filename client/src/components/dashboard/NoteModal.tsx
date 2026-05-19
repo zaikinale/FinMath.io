@@ -28,19 +28,60 @@ export const NoteModal: React.FC<NoteModalProps> = ({ isOpen, onClose, onSubmit,
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-      <div style={{ ...s.card, width: '100%', maxWidth: '400px', position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: c.muted }}><FaTimes /></button>
-        <h3 style={{ margin: '0 0 1.5rem 0' }}>{editNote ? 'Правка заметки' : 'Новая заметка'}</h3>
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <input {...register("title", { required: true })} placeholder="Заголовок" style={{ ...s.card, padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: `1px solid ${c.border}`, color: c.text } as React.CSSProperties} />
-          <textarea {...register("content")} placeholder="Текст заметки..." rows={4} style={{ ...s.card, padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: `1px solid ${c.border}`, color: c.text, resize: 'none' } as React.CSSProperties} />
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button type="submit" style={{ ...s.btn, flex: 1, background: c.purple, color: '#fff' }}><FaSave /> Сохранить</button>
+    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 box-border">
+      
+      {/* Контейнер карточки */}
+      <div className="w-full max-w-[400px] bg-white dark:bg-[#141414] border border-[#e5e5e5] dark:border-[#2a2a2a] p-6 rounded-3xl relative box-border shadow-2xl">
+        
+        {/* Кнопка закрытия */}
+        <button 
+          onClick={onClose} 
+          className="absolute top-5 right-5 bg-none border-none cursor-pointer text-[#666666] dark:text-[#999999] hover:opacity-80 transition-opacity p-1 flex items-center justify-center"
+        >
+          <FaTimes className="w-4 h-4" />
+        </button>
+
+        {/* Заголовок модалки */}
+        <h3 className="m-0 mb-5 text-base font-bold text-neutral-900 dark:text-white tracking-tight">
+          {editNote ? 'Правка заметки' : 'Новая заметка'}
+        </h3>
+
+        {/* Форма */}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full box-border">
+          
+          <input 
+            {...register("title", { required: true })} 
+            placeholder="Заголовок" 
+            className="w-full px-4 py-3 bg-neutral-50 dark:bg-white/5 text-neutral-900 dark:text-white border border-solid border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-xs font-semibold outline-none box-border transition-colors focus:border-violet-500"
+          />
+          
+          <textarea 
+            {...register("content")} 
+            placeholder="Текст заметки..." 
+            rows={4} 
+            className="w-full px-4 py-3 bg-neutral-50 dark:bg-white/5 text-neutral-900 dark:text-white border border-solid border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-xs font-semibold outline-none box-border resize-none transition-colors focus:border-violet-500"
+          />
+
+          {/* Кнопки управления */}
+          <div className="flex gap-2 w-full mt-1 box-border">
+            <button 
+              type="submit" 
+              className="flex-1 h-11 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs border-none rounded-xl cursor-pointer flex items-center justify-center gap-2 transition-colors shadow-sm shadow-violet-500/10"
+            >
+              <FaSave className="w-3.5 h-3.5" /> Сохранить
+            </button>
+            
             {editNote && (
-               <button type="button" onClick={() => onDelete(editNote.id)} style={{ ...s.btn, background: '#ef4444', color: '#fff' }}><FaTrash /></button>
+               <button 
+                 type="button" 
+                 onClick={() => onDelete(editNote.id)} 
+                 className="w-11 h-11 bg-red-500 hover:bg-red-600 text-white border-none rounded-xl cursor-pointer flex items-center justify-center transition-colors flex-shrink-0"
+               >
+                 <FaTrash className="w-3.5 h-3.5" />
+               </button>
             )}
           </div>
+
         </form>
       </div>
     </div>

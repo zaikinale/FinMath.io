@@ -6,7 +6,7 @@ export const ProtectedRoute = () => {
 
   if (isLoading) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', color: '#fff' }}>
+      <div className="h-screen w-full flex items-center justify-center bg-[#fafafa] dark:bg-[#0a0a0a] text-[#111111] dark:text-white text-sm font-bold tracking-wide box-border">
         Загрузка...
       </div>
     );

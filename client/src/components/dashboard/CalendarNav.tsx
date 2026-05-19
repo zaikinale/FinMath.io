@@ -30,26 +30,63 @@ export const CalendarNav: React.FC<CalendarNavProps> = ({ value, onChange, trans
   };
 
   return (
-    <div style={{ background: c.card, border: `1px solid ${c.border}`, borderRadius: '14px', padding: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <button onClick={() => handleMonthChange(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.text }}><FaChevronLeft size={12}/></button>
-        <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'capitalize' }}>{monthName}</span>
-        <button onClick={() => handleMonthChange(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.text }}><FaChevronRight size={12}/></button>
+    <div className="w-full bg-white dark:bg-[#141414] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl p-4 box-border shadow-sm">
+      
+      {/* Шапка навигации */}
+      <div className="flex justify-between items-center mb-4 box-border">
+        <button 
+          onClick={() => handleMonthChange(-1)} 
+          className="bg-transparent border-none cursor-pointer p-1 flex items-center justify-center rounded-lg text-neutral-800 dark:text-[#f5f5f5] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        >
+          <FaChevronLeft className="w-3 h-3" />
+        </button>
+        <span className="font-bold text-xs capitalize text-neutral-900 dark:text-[#f5f5f5] tracking-tight">
+          {monthName}
+        </span>
+        <button 
+          onClick={() => handleMonthChange(1)} 
+          className="bg-transparent border-none cursor-pointer p-1 flex items-center justify-center rounded-lg text-neutral-800 dark:text-[#f5f5f5] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        >
+          <FaChevronRight className="w-3 h-3" />
+        </button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
-        {['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map(d => (<div key={d} style={{ fontSize: '0.65rem', color: c.muted, fontWeight: 600, paddingBottom: '4px' }}>{d}</div>))}
+
+      {/* Дни недели и сетка дней */}
+      <div className="grid grid-cols-7 gap-1 text-center box-border">
+        {['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map(d => (
+          <div key={d} className="text-[10px] text-[#666666] dark:text-[#999999] font-bold uppercase pb-1 tracking-wider">
+            {d}
+          </div>
+        ))}
+        
         {days.map((d, i) => {
-          if (!d) return <div key={i} />;
+          if (!d) return <div key={i} className="h-[30px]" />;
+          
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
           const isSelected = value === dateKey;
+          
           const hasData = transactions.some(t => {
             if (!t.date) return false;
             const tDate = typeof t.date === 'string' ? t.date.split('T')[0] : new Date(t.date).toISOString().split('T')[0];
             return tDate === dateKey;
           });
+
           return (
-            <div key={i} onClick={() => onDateClick(dateKey)} style={{ height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '6px', fontSize: '0.75rem', position: 'relative', background: isSelected ? c.purple : 'transparent', color: isSelected ? '#fff' : c.text, transition: '0.2s' }}>
-              {d} {hasData && !isSelected && (<div style={{ width: '4px', height: '4px', borderRadius: '50%', background: c.purple, position: 'absolute', bottom: '3px' }} />)}
+            <div 
+              key={i} 
+              onClick={() => onDateClick(dateKey)} 
+              className={`h-[30px] flex items-center justify-center cursor-pointer rounded-lg text-xs relative font-semibold transition-all select-none box-border ${
+                isSelected 
+                  ? 'bg-violet-600 text-white shadow-sm' 
+                  : 'text-neutral-900 dark:text-[#f5f5f5] hover:bg-black/5 dark:hover:bg-white/5'
+              }`}
+            >
+              {d} 
+              
+              {/* Точка активности */}
+              {hasData && !isSelected && (
+                <div className="w-1 h-1 rounded-full bg-violet-500 absolute bottom-1 left-1/2 -translate-x-1/2" />
+              )}
             </div>
           );
         })}

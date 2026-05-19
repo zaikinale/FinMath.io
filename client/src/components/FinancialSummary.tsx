@@ -1,15 +1,9 @@
-import React, { useState } from 'react';
-import { FaArrowLeft, FaChartBar, FaExclamationTriangle, FaCalendarDay, FaWallet } from 'react-icons/fa';
+import { useState } from 'react';
+import { FaArrowLeft, FaChartBar, FaExclamationTriangle, FaWallet } from 'react-icons/fa';
 
 export const FinancialSummary = ({ period, reportData, onBack, c }) => {
-  const [activeTab, setActiveTab] = useState('expense'); // 'expense' или 'income'
+  const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
   
-  // Безопасные фолбэки для цветов темы, чтобы ничего не падало
-  const errorColor = c?.error || '#ef4444';
-  const successColor = c?.success || '#10b981';
-  const mutedColor = c?.muted || '#888';
-  const purpleColor = c?.purple || '#a855f7';
-
   // Форматирование заголовка периода
   const getPeriodLabel = () => {
     if (period === 'week') return 'за неделю';
@@ -33,114 +27,138 @@ export const FinancialSummary = ({ period, reportData, onBack, c }) => {
   const currentStats = activeTab === 'expense' ? expenseStats : incomeStats;
 
   return (
-    <div style={{ animation: 'fadeIn 0.4s ease', color: '#fff', maxWidth: '600px', margin: '0 auto' }}>
+    <div className="w-full max-w-[600px] mx-auto animate-fade-in text-neutral-900 dark:text-white box-border">
       
       {/* Шапка отчета */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div className="flex items-center gap-4 mb-6 box-border">
         <div 
           onClick={onBack} 
-          style={{ background: '#1a1a1a', padding: '0.8rem', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          className="bg-neutral-200 dark:bg-[#1a1a1a] text-neutral-700 dark:text-white p-3 rounded-xl cursor-pointer flex items-center justify-center hover:opacity-80 transition-all"
         >
-          <FaArrowLeft />
+          <FaArrowLeft className="w-4 h-4" />
         </div>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Финансовая аналитика</h2>
-          <span style={{ fontSize: '0.8rem', color: mutedColor }}>Показатели {getPeriodLabel()}</span>
+          <h2 className="m-0 text-lg font-bold tracking-tight">Финансовая аналитика</h2>
+          <span className="text-xs text-[#666666] dark:text-[#999999]">Показатели {getPeriodLabel()}</span>
         </div>
       </div>
 
       {/* КАРТОЧКА ОБЩЕГО БАЛАНСА (Доходы / Расходы / Итог) */}
-      <div style={{ background: 'linear-gradient(135deg, #141414 0%, #0d0d0d 100%)', padding: '1.5rem', borderRadius: '24px', border: '1px solid #222', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', textAlign: 'center' }}>
-          <div style={{ borderRight: '1px solid #222', paddingRight: '0.5rem' }}>
-            <span style={{ color: mutedColor, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Доходы</span>
-            <h3 style={{ margin: '0.2rem 0', color: successColor, fontSize: '1.3rem', fontWeight: 700 }}>+{totalIncome.toLocaleString()} ₽</h3>
+      <div className="bg-white dark:bg-gradient-to-br dark:from-[#141414] dark:to-[#0d0d0d] border border-[#e5e5e5] dark:border-[#222] p-6 rounded-3xl mb-6 shadow-md box-border">
+        <div className="grid grid-cols-2 gap-4 text-center box-border">
+          <div className="border-0 border-r border-solid border-[#e5e5e5] dark:border-[#222] pr-2 box-border">
+            <span className="text-[#666666] dark:text-[#999999] text-[10px] font-bold uppercase tracking-wider">Доходы</span>
+            <h3 className="m-0 mt-1 text-emerald-600 dark:text-emerald-500 text-xl font-black">
+              +{totalIncome.toLocaleString()} ₽
+            </h3>
           </div>
-          <div>
-            <span style={{ color: mutedColor, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Расходы</span>
-            <h3 style={{ margin: '0.2rem 0', color: errorColor, fontSize: '1.3rem', fontWeight: 700 }}>-{totalExpense.toLocaleString()} ₽</h3>
+          <div className="box-border">
+            <span className="text-[#666666] dark:text-[#999999] text-[10px] font-bold uppercase tracking-wider">Расходы</span>
+            <h3 className="m-0 mt-1 text-red-600 dark:text-red-500 text-xl font-black">
+              -{totalExpense.toLocaleString()} ₽
+            </h3>
           </div>
         </div>
         
-        <hr style={{ border: 'none', height: '1px', background: '#222', margin: '1rem 0' }} />
+        <hr className="border-none h-[1px] bg-[#e5e5e5] dark:bg-[#222] my-4" />
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem' }}>
-          <span style={{ color: mutedColor, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FaWallet size={12}/> Чистый баланс:
+        <div className="flex justify-between items-center px-2 box-border">
+          <span className="text-[#666666] dark:text-[#999999] text-sm font-medium flex items-center gap-2">
+            <FaWallet className="w-3 h-3" /> Чистый баланс:
           </span>
-          <span style={{ fontSize: '1.1rem', fontWeight: 700, marginLeft: 'auto', color: balance >= 0 ? successColor : errorColor }}>
+          <span className={`text-lg font-black tracking-tight ${
+            balance >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500'
+          }`}>
             {balance.toLocaleString()} ₽
           </span>
         </div>
       </div>
 
       {/* ТАБЫ ПЕРЕКЛЮЧЕНИЯ (Расходы / Доходы) */}
-      <div style={{ display: 'flex', background: '#141414', padding: '0.3rem', borderRadius: '12px', gap: '0.3rem', marginBottom: '1.5rem' }}>
+      <div className="flex bg-[#f0f0f0] dark:bg-[#141414] border border-transparent dark:border-[#222] p-1 rounded-xl gap-1 mb-6 box-border">
         <button 
           type="button"
           onClick={() => setActiveTab('expense')}
-          style={{ flex: 1, padding: '0.6rem', border: 'none', borderRadius: '9px', background: activeTab === 'expense' ? '#222' : 'transparent', color: activeTab === 'expense' ? '#fff' : '#666', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+          className={`flex-1 py-2.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all ${
+            activeTab === 'expense' 
+              ? 'bg-white dark:bg-[#222] text-neutral-900 dark:text-white shadow-sm' 
+              : 'bg-transparent text-[#666666] dark:text-[#666666] hover:opacity-80'
+          }`}
         >
           Расходы ({expenseStats.length})
         </button>
         <button 
           type="button"
           onClick={() => setActiveTab('income')}
-          style={{ flex: 1, padding: '0.6rem', border: 'none', borderRadius: '9px', background: activeTab === 'income' ? '#222' : 'transparent', color: activeTab === 'income' ? '#fff' : '#666', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+          className={`flex-1 py-2.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all ${
+            activeTab === 'income' 
+              ? 'bg-white dark:bg-[#222] text-neutral-900 dark:text-white shadow-sm' 
+              : 'bg-transparent text-[#666666] dark:text-[#666666] hover:opacity-80'
+          }`}
         >
           Доходы ({incomeStats.length})
         </button>
       </div>
 
       {/* СПИСОК ПОЗИЦИЙ АНАЛИТИКИ */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div className="flex flex-col gap-4 w-full box-border">
         {currentStats.map((item, idx) => {
-          // Защита от дублей ID / Key: связка имени и индекса гарантирует уникальность для React Virtual DOM
           const uniqueKey = item.name ? `${item.name}_${idx}` : `category_${idx}`;
           const amount = activeTab === 'expense' ? item.spent : item.earned;
 
           return (
-            <div key={uniqueKey} style={{ background: '#141414', padding: '1.2rem', borderRadius: '18px', border: `1px solid ${item.isOverLimit ? errorColor + '44' : '#222'}` }}>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+            <div 
+              key={uniqueKey} 
+              className={`p-5 rounded-2xl border box-border bg-white dark:bg-[#141414] transition-all ${
+                activeTab === 'expense' && item.isOverLimit 
+                  ? 'border-red-500/30 shadow-sm shadow-red-500/5' 
+                  : 'border-[#e5e5e5] dark:border-[#222]'
+              }`}
+            >
+              <div className="flex justify-between items-start mb-3 box-border">
                 <div>
-                  <span style={{ fontWeight: 700, fontSize: '1rem', display: 'block' }}>{item.name || 'Без названия'}</span>
-                  <span style={{ fontSize: '0.8rem', color: mutedColor }}>
+                  <span className="font-bold text-sm text-neutral-900 dark:text-white block">
+                    {item.name || 'Без названия'}
+                  </span>
+                  <span className="text-xs text-[#666666] dark:text-[#999999] font-medium block mt-0.5">
                     {amount.toLocaleString()} ₽ 
                     {activeTab === 'expense' && item.limit ? ` / из лимита ${item.limit.toLocaleString()} ₽` : ''}
                   </span>
                 </div>
                 
-                <div style={{ textAlign: 'right' }}>
-                  {/* Доля категории в общем объеме трат/поступлений за период */}
-                  <span style={{ fontSize: '0.8rem', color: '#666', display: 'block', marginBottom: '2px' }}>
+                <div className="text-right box-border">
+                  <span className="text-[11px] text-[#666666] dark:text-[#666666] font-bold block mb-0.5">
                     доля: {item.sharePercent || 0}%
                   </span>
                   
-                  {/* Процент выполнения лимита бюджета (только для расходов) */}
                   {activeTab === 'expense' && item.limit && (
-                    <span style={{ fontSize: '1rem', fontWeight: 900, color: item.isOverLimit ? errorColor : purpleColor, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <span className={`text-sm font-black inline-flex items-center gap-1 ${
+                      item.isOverLimit ? 'text-red-500' : 'text-violet-500 dark:text-violet-400'
+                    }`}>
                       {item.limitPercent}%
-                      {item.isOverLimit && <FaExclamationTriangle color={errorColor} size={12} />}
+                      {item.isOverLimit && <FaExclamationTriangle className="text-red-500 w-3 h-3" />}
                     </span>
                   )}
                 </div>
               </div>
 
               {/* ЛИНЕЙНЫЙ ГРАФИК (ПРОГРЕСС-БАР) */}
-              <div style={{ width: '100%', height: '8px', background: '#0d0d0d', borderRadius: '10px', overflow: 'hidden' }}>
-                <div style={{ 
-                  width: `${Math.min(activeTab === 'expense' && item.limit ? item.limitPercent : item.sharePercent, 100)}%`, 
-                  height: '100%', 
-                  background: activeTab === 'expense' ? (item.isOverLimit ? errorColor : purpleColor) : successColor,
-                  boxShadow: item.isOverLimit ? `0 0 10px ${errorColor}44` : 'none',
-                  transition: 'width 0.8s ease-out'
-                }} />
+              <div className="w-full h-2 bg-[#f0f0f0] dark:bg-[#0d0d0d] rounded-full overflow-hidden box-border">
+                <div 
+                  className={`h-full rounded-full transition-all duration-700 ease-out ${
+                    activeTab === 'expense' 
+                      ? (item.isOverLimit ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'bg-violet-500') 
+                      : 'bg-emerald-500'
+                  }`}
+                  style={{ 
+                    width: `${Math.min(activeTab === 'expense' && item.limit ? item.limitPercent : item.sharePercent, 100)}%` 
+                  }}
+                />
               </div>
 
               {/* Индикатор превышения лимита */}
               {activeTab === 'expense' && item.isOverLimit && (
-                <div style={{ fontSize: '0.75rem', color: errorColor, marginTop: '0.5rem', fontWeight: 500 }}>
+                <div className="text-xs text-red-500 font-semibold mt-2.5 m-0 animate-pulse">
                   Превышение лимита на {item.overLimitAmount?.toLocaleString()} ₽!
                 </div>
               )}
@@ -150,11 +168,11 @@ export const FinancialSummary = ({ period, reportData, onBack, c }) => {
         })}
       </div>
 
-      {/* ПУСТОЙ ЭКРАН (Если за период нет транзакций нужного типа) */}
+      {/* ПУСТОЙ ЭКРАН */}
       {currentStats.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '3rem', color: mutedColor }}>
-          <FaChartBar size={40} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-          <p>Нет операций данного типа за выбранный период</p>
+        <div className="text-center py-12 text-[#666666] dark:text-[#999999] box-border">
+          <FaChartBar className="w-10 h-10 mx-auto opacity-20 mb-3" />
+          <p className="text-sm font-medium m-0">Нет операций данного типа за выбранный период</p>
         </div>
       )}
 

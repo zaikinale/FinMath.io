@@ -31,7 +31,7 @@ export const AiReportModal = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  // Исправленный сброс состояния: сбрасываем "сохранено", если отчет пропал (вернулись на экран параметров)
+  // Исправленный сброс состояния: сбрасываем "сохранено", если отчет пропал
   useEffect(() => {
     if (isOpen && !report) {
       setIsSaved(false);
@@ -72,151 +72,127 @@ export const AiReportModal = ({
     }
   };
 
-  const optionStyle = (isActive: boolean): React.CSSProperties => ({
-    flex: 1,
-    padding: '0.6rem 0.2rem',
-    borderRadius: '8px',
-    fontSize: '0.8rem',
-    fontWeight: 600,
-    cursor: 'pointer',
-    textAlign: 'center',
-    transition: 'all 0.2s',
-    background: isActive ? c.purple : 'transparent',
-    color: isActive ? '#fff' : c.muted,
-    border: `1px solid ${isActive ? c.purple : 'transparent'}`,
-  });
-
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
-      <div style={{ 
-        ...s.card, 
-        width: '100%', 
-        maxWidth: report ? '520px' : '420px', 
-        padding: '1.5rem', 
-        border: `1px solid ${c.border}`,
-        maxHeight: '90vh', 
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
-      }}>
+    <div className="fixed inset-0 bg-black/60 dark:bg-black/85 backdrop-blur-sm flex items-center justify-center z-[2000] p-4 box-border">
+      
+      {/* Главный контейнер карточки */}
+      <div className={`w-full bg-white dark:bg-[#141414] border border-[#e5e5e5] dark:border-[#2a2a2a] p-6 rounded-3xl max-h-[90vh] flex flex-col box-border shadow-2xl transition-all duration-300 ${
+        report ? 'max-w-[520px]' : 'max-w-[420px]'
+      }`}>
         
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div style={{ background: c.purple + '22', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
-              <FaRobot color={c.purple} size={18} />
+        <div className="flex justify-between items-center mb-5 flex-shrink-0 box-border">
+          <div className="flex items-center gap-2.5 box-border">
+            <div className="bg-violet-500/10 p-2 rounded-xl flex items-center justify-center box-border">
+              <FaRobot className="text-violet-600 dark:text-violet-400 w-4.5 h-4.5" />
             </div>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>ИИ Аналитика</h3>
+            <h3 className="m-0 text-base font-bold text-neutral-900 dark:text-white tracking-tight">ИИ Аналитика</h3>
           </div>
-          <FaTimes onClick={onClose} style={{ cursor: 'pointer', color: c.muted, transition: 'color 0.2s' }} />
+          <FaTimes 
+            onClick={onClose} 
+            className="cursor-pointer text-[#666666] dark:text-[#999999] hover:opacity-80 transition-opacity w-4 h-4" 
+          />
         </div>
 
         {!report ? (
-          /* Форма параметров */
-          <div style={{ flexShrink: 0 }}>
-            <p style={{ color: c.muted, fontSize: '0.85rem', marginBottom: '1.2rem' }}>
+          /* Форма параметров генерации */
+          <div className="flex-shrink-0 box-border">
+            <p className="text-[#666666] dark:text-[#999999] text-xs font-medium m-0 mb-5 leading-relaxed">
               Выберите временной отрезок для формирования умного отчета.
             </p>
 
-            <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.2rem', background: '#1a1a1a', padding: '4px', borderRadius: '12px', border: `1px solid ${c.border}` }}>
-              {presets.map((p) => (
-                <div key={p.id} onClick={() => setSelectedType(p.id as ReportType)} style={optionStyle(selectedType === p.id)}>
-                  {p.label}
-                </div>
-              ))}
+            {/* Селектор пресетов периодов */}
+            <div className="flex gap-1 bg-[#f0f0f0] dark:bg-[#1a1a1a] p-1 rounded-xl border border-transparent dark:border-[#2a2a2a] mb-5 box-border">
+              {presets.map((p) => {
+                const isActive = selectedType === p.id;
+                return (
+                  <div 
+                    key={p.id} 
+                    onClick={() => setSelectedType(p.id as ReportType)} 
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold cursor-pointer text-center select-none transition-all ${
+                      isActive 
+                        ? 'bg-violet-600 text-white shadow-sm' 
+                        : 'bg-transparent text-[#666666] dark:text-[#999999] hover:text-[#111111] dark:hover:text-[#f5f5f5]'
+                    }`}
+                  >
+                    {p.label}
+                  </div>
+                );
+              })}
             </div>
 
+            {/* Кастомный выбор дат, если выбран 'custom' */}
             {selectedType === 'custom' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.2rem' }}>
+              <div className="flex items-center gap-2 mb-5 box-border animate-fade-in">
                 <input 
                   type="date" 
                   value={customRange.start}
                   onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
-                  style={{ ...s.input, flex: 1, padding: '0.5rem', fontSize: '0.8rem', minHeight: '38px' }} 
+                  className="flex-1 px-3 py-2 bg-white dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-neutral-900 dark:text-white text-xs box-border outline-none min-h-[38px] transition-colors focus:border-neutral-400 dark:focus:border-neutral-600" 
                 />
-                <div style={{ color: c.muted }}><FaChevronRight size={10} /></div>
+                <div className="text-[#666666] dark:text-[#999999] flex-shrink-0">
+                  <FaChevronRight className="w-2.5 h-2.5" />
+                </div>
                 <input 
                   type="date" 
                   value={customRange.end}
                   onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
-                  style={{ ...s.input, flex: 1, padding: '0.5rem', fontSize: '0.8rem', minHeight: '38px' }} 
+                  className="flex-1 px-3 py-2 bg-white dark:bg-[#1a1a1a] border border-[#e5e5e5] dark:border-[#2a2a2a] rounded-xl text-neutral-900 dark:text-white text-xs box-border outline-none min-h-[38px] transition-colors focus:border-neutral-400 dark:focus:border-neutral-600" 
                 />
               </div>
             )}
 
+            {/* Кнопка отправки */}
             <button 
               onClick={handleGenerate} 
               disabled={loading || (selectedType === 'custom' && (!customRange.start || !customRange.end))} 
-              style={{ ...s.btn, background: c.purple, color: 'white', width: '100%', justifyContent: 'center', height: '45px', fontWeight: 600, opacity: loading ? 0.7 : 1 }}
+              className="w-full h-11 bg-violet-600 hover:bg-violet-500 text-white border-none rounded-xl font-bold text-sm flex items-center justify-center cursor-pointer transition-all disabled:opacity-60 disabled:not-allowed shadow-sm shadow-violet-500/10"
             >
               {loading ? 'Просчитываю тренды...' : 'Сгенерировать анализ'}
             </button>
           </div>
         ) : (
-          /* ОТОБРАЖЕНИЕ ОТЧЕТА СО СКРОЛЛОМ И СОХРАНЕНИЕМ */
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: c.purple, fontWeight: 800, fontSize: '0.75rem', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
-              <FaMagic /> Результат анализа
+          /* Экран отображения сгенерированного отчета */
+          <div className="flex flex-col flex-1 overflow-hidden box-border">
+            <div className="flex items-center gap-1.5 text-violet-600 dark:text-violet-400 font-black text-[11px] mb-2.5 uppercase tracking-wider flex-shrink-0 box-border">
+              <FaMagic className="w-3 h-3" /> Результат анализа
             </div>
             
-            {/* Контейнер отчета со скроллбаром */}
-            <div 
-              style={{ 
-                flex: 1,
-                overflowY: 'auto', 
-                background: 'rgba(255, 255, 255, 0.02)', 
-                padding: '1rem', 
-                borderRadius: '12px', 
-                border: `1px solid ${c.border}`,
-                fontSize: '0.85rem', 
-                lineHeight: 1.6, 
-                color: c.text,
-              }}
+            {/* Контейнер отчета со встроенным скроллбаром и стилизацией Markdown через Tailwind */}
+            <div className="flex-1 overflow-y-auto bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-[#e5e5e5] dark:border-[#2a2a2a] text-xs font-medium leading-relaxed text-neutral-800 dark:text-[#f5f5f5] box-border
+              [&_h3]:text-violet-600 [&_h3]:dark:text-violet-400 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:border-0 [&_h3]:border-b [&_h3]:border-solid [&_h3]:border-[#e5e5e5] [&_h3]:dark:border-white/10 [&_h3]:pb-1
+              [&_h4]:text-violet-600 [&_h4]:dark:text-violet-400 [&_h4]:text-xs [&_h4]:font-bold [&_h4]:mt-4 [&_h4]:mb-2 [&_h4]:border-0 [&_h4]:border-b [&_h4]:border-solid [&_h4]:border-[#e5e5e5] [&_h4]:dark:border-white/10 [&_h4]:pb-1
+              [&_ul]:pl-5 [&_ul]:my-2 [&_ul]:list-disc
+              [&_li]:mb-1.5 [&_li]:text-neutral-700 [&_li]:dark:text-[#e0e0e0]
+              [&_strong]:text-neutral-950 [&_strong]:dark:text-white [&_strong]:font-bold
+              [&_table]:w-full [&_table]:border-collapse [&_table]:my-3
+              [&_th]:bg-black/[0.04] [&_th]:dark:bg-white/[0.04] [&_th]:p-2 [&_th]:border [&_th]:border-solid [&_th]:border-[#e5e5e5] [&_th]:dark:border-[#2a2a2a] [&_th]:text-left [&_th]:text-[11px]
+              [&_td]:p-2 [&_td]:border [&_td]:border-solid [&_td]:border-[#e5e5e5] [&_td]:dark:border-[#2a2a2a] [&_td]:text-[11px]"
             >
-              {/* Добавлена стилизация для h4 и убран node для избежания конфликтов типов */}
-              <ReactMarkdown components={{
-                h3: ({...props}) => <h3 style={{ color: c.purple, fontSize: '1rem', fontWeight: 700, margin: '1.2rem 0 0.5rem 0', borderBottom: `1px solid ${c.border}44`, paddingBottom: '0.3rem' }} {...props} />,
-                h4: ({...props}) => <h4 style={{ color: c.purple, fontSize: '0.95rem', fontWeight: 700, margin: '1.2rem 0 0.5rem 0', borderBottom: `1px solid ${c.border}44`, paddingBottom: '0.3rem' }} {...props} />,
-                ul: ({...props}) => <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0' }} {...props} />,
-                li: ({...props}) => <li style={{ marginBottom: '0.4rem', color: '#e0e0e0' }} {...props} />,
-                strong: ({...props}) => <strong style={{ color: '#fff', fontWeight: 600 }} {...props} />,
-                table: ({...props}) => <table style={{ width: '100%', borderCollapse: 'collapse', margin: '0.8rem 0' }} {...props} />,
-                th: ({...props}) => <th style={{ background: 'rgba(255,255,255,0.04)', padding: '0.4rem', border: `1px solid ${c.border}`, textAlign: 'left', fontSize: '0.8rem' }} {...props} />,
-                td: ({...props}) => <td style={{ padding: '0.4rem', border: `1px solid ${c.border}`, fontSize: '0.8rem' }} {...props} />
-              }}>
-                {reportText}
-              </ReactMarkdown>
+              <ReactMarkdown>{reportText}</ReactMarkdown>
             </div>
             
-            {/* Секция двух кнопок внизу */}
-            <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem', flexShrink: 0 }}>
+            {/* Кнопки управления */}
+            <div className="flex gap-2.5 mt-4 flex-shrink-0 box-border">
               {/* Кнопка «Сохранить отчет» */}
               <button 
                 onClick={handleSave} 
                 disabled={isSaving || isSaved || !onSaveReport}
-                style={{ 
-                  ...s.btn, 
-                  background: isSaved ? 'rgba(0, 200, 83, 0.15)' : 'transparent', 
-                  color: isSaved ? '#00c853' : '#fff', 
-                  border: `1px solid ${isSaved ? '#00c853' : c.border}`,
-                  flex: 1,
-                  justifyContent: 'center', 
-                  height: '42px', 
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  borderRadius: '12px',
-                  cursor: isSaved ? 'default' : 'pointer'
-                }}
+                className={`flex-1 h-11 font-bold text-xs rounded-xl border border-solid flex items-center justify-center gap-1.5 transition-all ${
+                  isSaved 
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border-emerald-500/30 cursor-default' 
+                    : 'bg-transparent text-neutral-800 dark:text-white border-[#e5e5e5] dark:border-[#2a2a2a] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer'
+                } disabled:opacity-60`}
               >
                 {isSaving ? (
                   'Сохраняю...'
                 ) : isSaved ? (
                   <>
-                    <FaCheck style={{ marginRight: '6px' }} /> Сохранено
+                    <FaCheck className="w-3.5 h-3.5" /> Сохранено
                   </>
                 ) : (
                   <>
-                    <FaBookmark style={{ marginRight: '6px', color: c.purple }} /> Сохранить в историю
+                    <FaBookmark className="text-violet-600 dark:text-violet-400 w-3 h-3" /> Сохранить в историю
                   </>
                 )}
               </button>
@@ -224,7 +200,7 @@ export const AiReportModal = ({
               {/* Кнопка закрытия */}
               <button 
                 onClick={onClose} 
-                style={{ ...s.btn, background: c.purple, color: '#fff', flex: 1, justifyContent: 'center', height: '42px', fontWeight: 600, fontSize: '0.85rem', borderRadius: '12px' }}
+                className="flex-1 h-11 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs border-none rounded-xl cursor-pointer flex items-center justify-center transition-colors shadow-sm shadow-violet-500/10"
               >
                 Закрыть отчет
               </button>
@@ -232,8 +208,9 @@ export const AiReportModal = ({
           </div>
         )}
 
-        <div style={{ marginTop: '1rem', textAlign: 'center', flexShrink: 0 }}>
-          <p style={{ fontSize: '0.7rem', color: c.muted, margin: 0 }}>
+        {/* Подвал дисклеймера */}
+        <div className="mt-4 text-center flex-shrink-0 box-border">
+          <p className="text-[10px] text-[#666666] dark:text-[#999999] m-0 font-medium tracking-wide">
             FinMath ИИ анализирует лимиты, аномалии и структуру транзакций.
           </p>
         </div>

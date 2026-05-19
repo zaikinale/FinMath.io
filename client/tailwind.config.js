@@ -1,10 +1,11 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite'; // <-- Импортируем плагин
-
-export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(), // <-- Добавляем плагин в массив к Реакту
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
-});
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
